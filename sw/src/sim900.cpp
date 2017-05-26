@@ -351,7 +351,37 @@ std::string CSIM900::GetCCI() {
     // write AT command to get CCI
     WriteLn("AT+QCCID");
 
-    // TODO: read data from device
+    // get CCI
+    if ((status = WaitResp(5000, 50, STR_OK)) != RX_ST_FINISHED_STR_ERR) {
+        // get data from device
+        ret = GetCommBuff();
+        CLogger::GetLogger()->LogPrintf(LL_DEBUG, "%s(): CCI:%s", __PRETTY_FUNCTION__, ret.c_str());
+    }
+
+    return ret;
+}
+
+std::string CSIM900::GetIP() {
+    int status;
+    std::string ret = std::string();
+
+    // check status
+    if (GetGSMStatus() != GSM_ST_ATTACHED) {
+        CLogger::GetLogger()->LogPrintf(LL_ERROR, "%s(): GSM status needs to be attached!", __PRETTY_FUNCTION__);
+        return ret;
+    }
+
+    // write AT command to get IP address
+    WriteLn("AT+CIFSR");
+
+    // get CCI
+    if ((status = WaitResp(5000, 50, STR_OK)) != RX_ST_FINISHED_STR_ERR) {
+        // get data from device
+        ret = GetCommBuff();
+        CLogger::GetLogger()->LogPrintf(LL_DEBUG, "%s(): IP:%s", __PRETTY_FUNCTION__, ret.c_str());
+    }
+
+    return ret;
 }
 
 CCtrlGSM::CCtrlGSM() {
@@ -615,4 +645,147 @@ bool CCtrlGSM::HttpGET(const char *server, unsigned int port, const char *url, c
     }
 
     return true;
+}
+
+bool CCtrlGSM::SendSMS(const char *number, const char *msg) {
+    // check number and message
+    if (number == NULL || msg == NULL) {
+        CLogger::GetLogger()->LogPrintf(LL_ERROR, "%s(): number or message test to send SMS are missing!", __PRETTY_FUNCTION__);
+        return false;
+    }
+
+    // check message text length
+    if (strlen(msg) > SMS_MAX_LEN) {
+        CLogger::GetLogger()->LogPrintf(LL_ERROR, "%s(): can not send message longer than %s characters!",__PRETTY_FUNCTION__, SMS_MAX_LEN);
+        return false;
+    }
+
+    if (!m_initialized) {
+        CLogger::GetLogger()->LogPrintf(LL_ERROR, "%s(): GSM module is not initialized!", __PRETTY_FUNCTION__);
+        return false;
+    }
+
+    // check link status
+    if (m_pSIM900->GetGSMStatus() != GSM_ST_IDLE) {
+        CLogger::GetLogger()->LogPrintf(LL_WARNING, "%s(): GSM status is not IDLE", __PRETTY_FUNCTION__);
+        return false;
+    }
+
+    CLogger::GetLogger()->LogPrintf(LL_DEBUG, "%s(): trying to send SMS to number %s", __PRETTY_FUNCTION__, number);
+
+    bool sent = false;
+
+    // try to send sms 3-times
+    for (int i = 0; i < 3; i++) {
+        // set sms number
+        m_pSIM900->Write("AT+CMGS=\"");
+        m_pSIM900->Write(number);
+        m_pSIM900->WriteLn("\"");
+
+        // check response
+        if (m_pSIM900->WaitResp(1000, 500, ">") == RX_ST_FINISHED_STR_OK) {
+            // set sms text
+            m_pSIM900->Write(msg);
+            m_pSIM900->Write(0x1a);
+            m_pSIM900->Write('\0');
+
+            // check if message was sent
+            if (m_pSIM900->WaitResp(7000, 5000, "+CMGS")) {
+                sent = true;
+                break;
+            }
+        }
+    }
+
+    if (sent) CLogger::GetLogger()->LogPrintf(LL_INFO, "%s(): SMS was sent successfully", __PRETTY_FUNCTION__);
+    else CLogger::GetLogger()->LogPrintf(LL_ERROR, "%s(): SMS was not sent!", __PRETTY_FUNCTION__);
+
+    // set comm status
+    m_pSIM900->SetCommStatus(CLS_FREE);
+
+    return sent;
+}
+
+int CCtrlGSM::GetSMS(unsigned char position, char *number, char *pMsg,
+    size_t outlen) {
+    int ret = -1;
+
+    // check output number and buffer for text
+    if (number == NULL || pMsg == NULL) {
+        CLogger::GetLogger()->LogPrintf(LL_ERROR, "%s(): number or message test to send SMS are missing!", __PRETTY_FUNCTION__);
+        return false;
+    }
+
+    // check position
+    if (!position) {
+        CLogger::GetLogger()->LogPrintf(LL_ERROR, "%s(): can not access to 0 SMS position!", __PRETTY_FUNCTION__);
+        return ret;
+    }
+
+    if (!m_initialized) {
+        CLogger::GetLogger()->LogPrintf(LL_ERROR, "%s(): GSM module is not initialized!", __PRETTY_FUNCTION__);
+        return ret;
+    }
+
+    // check comm status
+    if (m_pSIM900->GetCommStatus() != CLS_FREE) {
+        CLogger::GetLogger()->LogPrintf(LL_WARNING, "%s(): CommLine status is not FREE", __PRETTY_FUNCTION__);
+        return ret;
+    }
+    // set comm status
+    m_pSIM900->SetCommStatus(CLS_ATCMD);
+
+    // set output to no SMS
+    ret = SMS_ST_NO_SMS;
+
+    // get sms on position
+    m_pSIM900->Write("AT+CMGR=");
+    m_pSIM900->WriteLn(position);
+
+    // get response
+    int resp = m_pSIM900->WaitResp(5000, 100, "+CMGR");
+
+    // get last response
+    const std::string str = m_pSIM900->GetCommBuff();
+
+    // switch by response
+    switch (resp) {
+        case RX_ST_TIMEOUT_ERR:
+            // response timeout
+            ret = -2;
+            break;
+
+        case RX_ST_FINISHED_STR_ERR:
+            // SMS was received, but not on entered position
+            if (!str.compare(STR_OK)) {
+                ret = SMS_ST_NO_SMS;
+            } else if (!str.compare(STR_ERR)) {
+                ret = SMS_ST_NO_SMS;
+            }
+            break;
+
+        case RX_ST_FINISHED_STR_OK:
+            // check received sms
+            if (!str.compare("\"REC UNREAD\"")) {
+                // set status for unread sms
+                ret = SMS_ST_UNREAD;
+            } else if (!str.compare("\"REC READ\"")) {
+                // get phone number from received sms
+                ret = SMS_ST_READ;
+            } else {
+                // other sms was found
+                ret = SMS_ST_OTHER;
+            }
+
+            // extract number from sms
+            // TODO: number parser
+
+            // copy text to output buffer
+            // TODO: text parser
+            break;
+    }
+
+    // set comm status
+    m_pSIM900->SetCommStatus(CLS_FREE);
+    return ret;
 }

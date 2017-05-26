@@ -28,6 +28,9 @@
 #define INIT_PARAM_SET_0 0
 #define INIT_PARAM_SET_1 1
 
+// sms text length
+#define SMS_MAX_LEN 159
+
 enum ComLineStatus {
     CLS_FREE = 0,   // line is free
     CLS_ATCMD,      // line is used by AT command + timeouts for response
@@ -35,6 +38,7 @@ enum ComLineStatus {
     CLS_COUNT
 };
 
+// TODO: add desc
 enum GSMStatus {
     GSM_ST_IDLE = 0,
     GSM_ST_READY,
@@ -59,6 +63,17 @@ enum RXStatus {
     RX_ST_FINISHED_STR_ERR, // finished, received non-expected string
     RX_ST_TIMEOUT_ERR,      // finished, timeout elapsed
     RX_ST_LAST_ITEM         // init communication timeout
+};
+
+// TODO: add desc
+enum SMSStatus {
+    SMS_ST_NO_SMS = 0,
+    SMS_ST_UNREAD,
+    SMS_ST_READ,
+    SMS_ST_OTHER,
+    SMS_ST_NO_AUTH,
+    SMS_ST_AUTH,
+    SMS_ST_LAST_ITEM
 };
 
 class CGSM {
@@ -133,6 +148,9 @@ public:
     bool DetachGPRS();
 
     bool HttpGET(const char *server, unsigned int port, const char *url, char *pOut = NULL, size_t outLen = 0);
+
+    bool SendSMS(const char *number, const char *msg);
+    int GetSMS(unsigned char position, char *number, char *pMsg, size_t outlen);
 
 private:
     bool ConnectTCP(const char *server, unsigned int port);
