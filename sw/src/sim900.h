@@ -132,7 +132,7 @@ public:
     bool AttachGPRS(const char *apn, const char *user, const char *pwd);
     bool DetachGPRS();
 
-    bool HttpGET(const char *server, unsigned int port, const char *path, char *out = NULL, size_t outLen = 0);
+    bool HttpGET(const char *server, unsigned int port, const char *url, char *pOut = NULL, size_t outLen = 0);
 
 private:
     bool ConnectTCP(const char *server, unsigned int port);
