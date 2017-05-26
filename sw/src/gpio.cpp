@@ -147,6 +147,9 @@ void CGpIOOutput::SetValue(const bool on) {
 
     // set pin value
     verify(WriteFile(GPIO_PATH"gpio" + ToString(GetPin()) + "/value", on ? "1" : "0"));
+
+    // save actual value
+    m_act = on;
 }
 
 /*CGPIO::CGPIO() {
