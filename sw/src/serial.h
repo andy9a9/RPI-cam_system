@@ -9,6 +9,7 @@ typedef enum BaudRate {
 	BR_1200 = B1200,
 	BR_1800,
 	BR_2400,
+	BR_4800,
 	BR_9600,
 	BR_19200,
 	BR_38400,
