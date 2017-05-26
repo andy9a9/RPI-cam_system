@@ -107,7 +107,7 @@ size_t CGSM::Read(char *pOut, size_t len) {
     // wait while incoming data are not available
     while (!m_pSerial->DataAvailable()) usleep(100000);
 
-    while (m_pSerial->DataAvailable() && (idx < len -1)) {
+    while (m_pSerial->DataAvailable() && (idx < len - 1)) {
         // skip null data
         if ((c = m_pSerial->Getc() != 0)) {
             // save data to output buffer
@@ -206,8 +206,7 @@ int CGSM::WaitResp(unsigned long tmt, unsigned long maxCharsTmt, const char *exp
                 status = RX_ST_FINISHED;
             }
         }
-    } while(status == RX_ST_NOT_FINISHED);
-
+    } while (status == RX_ST_NOT_FINISHED);
 
     // clean pointer
     pCommBuff = NULL;
@@ -317,7 +316,7 @@ bool CSIM900::Init(const BaudRate baudrate, const char *device) {
     }
 
     m_initialized = true;
-	return m_initialized;
+    return m_initialized;
 }
 
 std::string CSIM900::GetIMEI() {

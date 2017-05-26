@@ -12,47 +12,47 @@
 
 class CGpIOBase {
 public:
-	CGpIOBase();
-	~CGpIOBase();
+    CGpIOBase();
+    ~CGpIOBase();
 
 protected:
-	static bool RunCmd(const std::string &cmd);
-	static bool WriteFile(const std::string &file, const char *data, int wait = 0);
-	static std::string ReadFile(const std::string &file);
+    static bool RunCmd(const std::string &cmd);
+    static bool WriteFile(const std::string &file, const char *data, int wait = 0);
+    static std::string ReadFile(const std::string &file);
 };
 
-class CGpIOAny : public CGpIOBase {
+class CGpIOAny: public CGpIOBase {
 public:
-	explicit CGpIOAny(unsigned int pin);
-	~CGpIOAny();
+    explicit CGpIOAny(unsigned int pin);
+    ~CGpIOAny();
 
-	inline unsigned int GetPin() const { return m_pin; }
+    inline unsigned int GetPin() const { return m_pin; }
 
 protected:
-	void SetDir(const bool in);
-	void SetVal(const bool on);
+    void SetDir(const bool in);
+    void SetVal(const bool on);
 
 private:
-	const unsigned int m_pin;
+    const unsigned int m_pin;
 };
 
-class CGpIOInput : public CGpIOAny {
+class CGpIOInput: public CGpIOAny {
 public:
-	explicit CGpIOInput(unsigned int pin);
-	~CGpIOInput();
+    explicit CGpIOInput(unsigned int pin);
+    ~CGpIOInput();
 
-	bool GetValue();
+    bool GetValue();
 };
 
-class CGpIOOutput : public CGpIOAny {
+class CGpIOOutput: public CGpIOAny {
 public:
-	explicit CGpIOOutput(unsigned int pin);
-	~CGpIOOutput();
+    explicit CGpIOOutput(unsigned int pin);
+    ~CGpIOOutput();
 
-	void SetValue(const bool on);
+    void SetValue(const bool on);
 
 private:
-	bool m_act;
+    bool m_act;
 };
 
 #endif // GPIO_H_

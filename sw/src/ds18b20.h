@@ -13,22 +13,22 @@
 
 class CDS18B20 {
 public:
-	CDS18B20();
-	~CDS18B20();
+    CDS18B20();
+    ~CDS18B20();
 
-	bool Init();
-	inline unsigned char GetDevCount() { return m_devCount; }
-	inline unsigned char GetCurrIdx() { return m_currIdx; }
+    bool Init();
+    inline unsigned char GetDevCount() { return m_devCount; }
+    inline unsigned char GetCurrIdx() { return m_currIdx; }
 
-	float GetTemp(unsigned char idx = 0);
+    float GetTemp(unsigned char idx = 0);
 
 private:
-	const char *m_addr;
-	unsigned char m_unit;
-	unsigned char m_devCount;
-	unsigned char m_currIdx;
-	std::vector<std::string> m_devices;
-	std::string m_devPath;
+    const char *m_addr;
+    unsigned char m_unit;
+    unsigned char m_devCount;
+    unsigned char m_currIdx;
+    std::vector<std::string> m_devices;
+    std::string m_devPath;
 };
 
 #endif // DS18B20_H_

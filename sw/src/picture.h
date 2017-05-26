@@ -8,42 +8,42 @@
 #define FRAME_WIDTH 1024
 #define FRAME_HEIGHT 768
 
-class CCamera
-{
+class CCamera {
 public:
-	CCamera();
-	~CCamera();
+    CCamera();
+    ~CCamera();
 
-	bool Init();
+    bool Init();
 
-	bool Connect();
-	inline bool isConnected() { return m_connected; }
-	void Disconnect();
+    bool Connect();
+    inline bool isConnected() { return m_connected; }
+    void Disconnect();
 
-	bool Capture(cv::Mat &outImage, int count = 1);
+    bool Capture(cv::Mat &outImage, int count = 1);
 
 private:
-	raspicam::RaspiCam_Cv *m_pRaspiCam;
-	bool m_connected;
-	std::string m_ID;
+    raspicam::RaspiCam_Cv *m_pRaspiCam;
+    bool m_connected;
+    std::string m_ID;
 };
 
 #define IMAGE_FRAME_COUNT 10
 
 class CPicture {
 public:
-	CPicture();
-	~CPicture();
+    CPicture();
+    ~CPicture();
 
-	bool Init(const std::string &outpuPath, bool useCamera = true);
-	bool TakePicture(const std::string &fileName);
-	void PutText(const std::string &image, const std::string &text,
-		const cv::Point &invCoord = cv::Point(235, 20), const cv::Scalar &color = cv::Scalar(255, 255, 255));
+    bool Init(const std::string &outpuPath, bool useCamera = true);
+    bool TakePicture(const std::string &fileName);
+    void PutText(const std::string &image, const std::string &text,
+        const cv::Point &invCoord = cv::Point(235, 20),
+        const cv::Scalar &color = cv::Scalar(255, 255, 255));
 
 private:
-	CCamera *m_pCamera;
-	cv::Mat *m_pImage;
-	std::string m_picPath;
+    CCamera *m_pCamera;
+    cv::Mat *m_pImage;
+    std::string m_picPath;
 };
 
 #endif // PICTURE_H_

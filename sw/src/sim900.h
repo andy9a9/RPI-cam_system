@@ -100,27 +100,27 @@ private:
 
 private:
     CSerial *m_pSerial;
-    char m_commBuff[COMM_BUFF_SIZE +1];
+    char m_commBuff[COMM_BUFF_SIZE + 1];
     unsigned char m_commStatus;
     unsigned char m_GSMStatus;
 };
 
-class CSIM900 : public CGSM {
+class CSIM900: public CGSM {
 public:
-	bool Init(const BaudRate baudrate, const char *device);
-	bool ForceON();
+    bool Init(const BaudRate baudrate, const char *device);
+    bool ForceON();
 
-	std::string GetIMEI();
-	std::string GetCCI();
-	std::string GetIP();
+    std::string GetIMEI();
+    std::string GetCCI();
+    std::string GetIP();
 
-	bool CheckRegistration();
-	inline bool IsRegistered() { return m_registered; }
+    bool CheckRegistration();
+    inline bool IsRegistered() { return m_registered; }
 
 private:
-	bool m_registered;
+    bool m_registered;
     bool m_initialized;
-	friend class CCtrlGSM;
+    friend class CCtrlGSM;
 };
 
 class CCtrlGSM {
