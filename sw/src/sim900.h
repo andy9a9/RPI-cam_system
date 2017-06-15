@@ -4,9 +4,9 @@
 #include "serial.h"
 #include <string>
 
-// pins definitions //TODO: modify for GPIO
-#define GPIO_SIM900_ON      2
-#define GPIO_SIM900_REST    3
+// pins definitions
+#define GPIO_SIM900_ON      17
+#define GPIO_SIM900_REST    18
 
 // status bits definition
 #define MSK_STATUS_NONE         0
@@ -98,19 +98,19 @@ protected:
     void Echo(bool on);
     void InitParams(unsigned char params);
 
-    inline void Write(char c) { return _Write(&c, 1); }
-    inline void Write(char *data, size_t len = 0) { return _Write(data, len); }
-    inline void Write(const char *data, size_t len = 0) { return _Write(data, len); }
+    inline void Write(char c) { return _Write(&c); }
+    inline void Write(char *data) { return _Write(data); }
+    inline void Write(const char *data) { return _Write(data); }
 
-    inline void WriteLn(char c) { return _WriteLn(&c, 1); }
-    inline void WriteLn(char *data, size_t len = 0) { return _WriteLn(data, len); }
-    inline void WriteLn(const char *data, size_t len = 0) { return _WriteLn(data, len); }
+    inline void WriteLn(char c) { return _WriteLn(&c); }
+    inline void WriteLn(char *data) { return _WriteLn(data); }
+    inline void WriteLn(const char *data) { return _WriteLn(data); }
 
     size_t Read(char *pOut, size_t len = 0);
 
 private:
-    void _Write(const char *data, size_t len);
-    void _WriteLn(const char *data, size_t len);
+    void _Write(const char *data);
+    void _WriteLn(const char *data);
     bool CheckRcvdResp(const char *str);
 
 private:
