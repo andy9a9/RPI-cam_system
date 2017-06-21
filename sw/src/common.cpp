@@ -31,3 +31,10 @@ double GetTimeSec() {
     clock_gettime(CLOCK_MONOTONIC, &tm);
     return ((tm.tv_sec - c_TimeStart.tv_sec) + tm.tv_nsec * 0.000000001);
 }
+
+std::string computeMethodName(const std::string &function, const std::string &prettyFunction) {
+    size_t locFunName = prettyFunction.find(function);
+    size_t begin = prettyFunction.rfind(" ",locFunName) + 1;
+    size_t end = prettyFunction.find("(",locFunName + function.length());
+    return (prettyFunction.substr(begin,end - begin) + "()");
+}

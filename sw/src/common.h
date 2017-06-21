@@ -13,6 +13,15 @@
 #include <sstream>
 #include <string>
 
+// error codes
+enum errorCodes {
+    ERR_NONE = 0,
+    ERR_INIT_SETTINGS,
+    ERR_INIT_TEMP,
+    ERR_INIT_CAM,
+    ERR_INIT_GSM
+};
+
 // get array size
 #define arraysize(arr) (sizeof(arr)/sizeof((arr)[0]))
 
@@ -29,6 +38,11 @@ static std::string ToString(const T& n) { std::stringstream ss; ss << n; return 
 // convert to ASCII
 template <typename T>
 static char ToASCII(const T& n) { static const char a[] = " .:-=0123456789X"; return a[(size_t(n * arraysize(a) -1))]; }
+
+// print compacted version of PRETTY_FUNCTION
+#define __COMPACT_PRETTY_FUNCTION__ computeMethodName(__FUNCTION__,__PRETTY_FUNCTION__).c_str()
+
+std::string computeMethodName(const std::string &function, const std::string &prettyFunction);
 
 // get time from start in [ms]
 unsigned GetTimeMSec();
