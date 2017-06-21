@@ -33,6 +33,9 @@ public:
     void SetLogPrefix(const char *prefix);
     inline void SetNewLineAppend(bool enable) { m_appendNewLine = enable; }
 
+    inline void SetLogLevelSystem(const LogLevel loglvl) { m_systemLogLevel = loglvl; }
+    inline void SetLogLevelFile(const LogLevel loglvl) { m_fileLogLevel = loglvl; }
+
 private:
     CLogger();
     CLogger(CLogger const& copy); // not implemented
