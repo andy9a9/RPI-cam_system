@@ -7,6 +7,9 @@
 // pins definitions
 #define GPIO_SIM900_ON      17
 #define GPIO_SIM900_REST    18
+// TODO: check pins
+#define GPIO_SIM900_DTR     19
+#define GPIO_SIM900_RI      20
 
 // status bits definition
 #define MSK_STATUS_NONE         0
@@ -23,6 +26,7 @@
 #define STR_CR '\r'
 #define STR_LF '\n'
 #define STR_CRLF "\r\n"
+#define STR_CTRLZ 0x01A
 
 // initial parameters settings
 #define INIT_PARAM_SET_0 0
@@ -148,6 +152,7 @@ public:
     bool DetachGPRS();
 
     bool HttpGET(const char *server, unsigned int port, const char *url, char *pOut = NULL, size_t outLen = 0);
+    bool HttpPOST(const char *server, unsigned int port, const char *url, const char *params, char *pOut = NULL, size_t outLen = 0);
 
     bool SendSMS(const char *number, const char *msg);
     int GetSMS(unsigned char position, char *number, char *pMsg, size_t outlen);
