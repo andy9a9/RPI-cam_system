@@ -40,6 +40,13 @@ public:
         const cv::Point &invCoord = cv::Point(235, 20),
         const cv::Scalar &color = cv::Scalar(255, 255, 255));
 
+    void EncodePicture(const std::string &image, std::string &outEncode);
+    void DencodePicture(const std::string &image, std::string &outDencode);
+
+private:
+    void Serialize(const cv::Mat image, std::stringstream &outStream);
+    void Deserialize(std::stringstream inStream, cv::Mat &outImage);
+
 private:
     CCamera *m_pCamera;
     cv::Mat *m_pImage;

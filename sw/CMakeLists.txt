@@ -18,6 +18,7 @@ set(cam-system_SOURCES
   src/logger.cpp
   src/settings.cpp
   src/ds18b20.cpp
+  src/base64.cpp
   src/picture.cpp
   src/serial.cpp
   src/gpio.cpp
@@ -31,6 +32,7 @@ set(cam-system_HEADERS
   src/simpleini/SimpleIni.h
   src/settings.h
   src/ds18b20.h
+  src/base64.h
   src/picture.h
   src/gpio.h
   src/serial.h

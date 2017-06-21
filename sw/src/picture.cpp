@@ -1,6 +1,7 @@
 #include "common.h"
 #include "logger.h"
 #include <sys/stat.h>
+#include "base64.h"
 
 #include <opencv2/imgproc.hpp>
 
@@ -216,7 +217,7 @@ void CPicture::PutText(const std::string &image, const std::string &text, const 
     }
 
     // load image
-    cv::Mat outImage = cv::imread(m_picPath + image, CV_LOAD_IMAGE_UNCHANGED);
+    const cv::Mat outImage = cv::imread(m_picPath + image, CV_LOAD_IMAGE_UNCHANGED);
 
     // put text
     cv::putText(outImage, text, cv::Point(outImage.size().width - invCoord.x, outImage.size().height - invCoord.y),
@@ -226,5 +227,75 @@ void CPicture::PutText(const std::string &image, const std::string &text, const 
     cv::imwrite(m_picPath + image, outImage);
 
     // clean
-    outImage.release();
+    //outImage.release();
+}
+
+void CPicture::Serialize(const cv::Mat image, std::stringstream &outStream) {
+    // serialize the width, height, type and size of the matrix
+    int width = image.cols;
+    int height = image.rows;
+    int type = image.type();
+    size_t size = image.total() * image.elemSize();
+
+    // write the data to stringstream
+    outStream.write((char*)(&width), sizeof(int));
+    outStream.write((char*)(&height), sizeof(int));
+    outStream.write((char*)(&type), sizeof(int));
+    outStream.write((char*)(&size), sizeof(size_t));
+
+    // write the whole image data
+    outStream.write((char*)image.data, size);
+}
+
+void CPicture::Deserialize(std::stringstream inStream, cv::Mat &outImage) {
+    int width = 0;
+    int height = 0;
+    int type = 0;
+    size_t size = 0;
+
+    // read the width, height, type and size of the buffer
+    inStream.read((char*)(&width), sizeof(int));
+    inStream.read((char*)(&height), sizeof(int));
+    inStream.read((char*)(&type), sizeof(int));
+    inStream.read((char*)(&size), sizeof(size_t));
+
+    // allocate a buffer for the pixels
+    char* data = new char[size];
+
+    // read the pixels from the stringstream
+    inStream.read(data, size);
+
+    // construct the image (clone it so that it won't need our buffer anymore)
+    outImage = cv::Mat(height, width, type, data).clone();
+
+    // clean
+    delete[]data;
+    inStream.clear();
+}
+
+void CPicture::EncodePicture(const std::string &image, std::string &outEncode) {
+    // check if picture or output encoding are not null
+    if (&image == NULL || outEncode.length() == 0) {
+        CLogger::GetLogger()->LogPrintf(LL_ERROR, "image or output for encoding are null!");
+        return;
+    }
+
+    // check if image exist with r rights
+    if (!access(image.c_str(), R_OK)) {
+        CLogger::GetLogger()->LogPrintf(LL_ERROR, "image is not readable!");
+        return;
+    }
+
+    // load image
+    const cv::Mat outImage = cv::imread(m_picPath + image, CV_LOAD_IMAGE_UNCHANGED);
+
+    // serialize image
+    std::stringstream ss;
+    Serialize(outImage, ss);
+
+    // Base64 encode the image
+    outEncode = Base64Encode(reinterpret_cast<const unsigned char*>(ss.str().c_str()), ss.str().length());
+
+    // clean
+    ss.clear();
 }
