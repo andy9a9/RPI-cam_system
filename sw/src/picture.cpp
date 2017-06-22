@@ -157,13 +157,7 @@ bool CPicture::Init(const std::string &outpuPath, bool useCamera) {
     return true;
 }
 
-bool CPicture::TakePicture(const std::string &fileName) {
-    // check if output file name for picture is not null
-    if (!fileName.size()) {
-        CLogger::GetLogger()->LogPrintf(LL_ERROR, "filename for picture is null!");
-        return false;
-    }
-
+bool CPicture::TakePicture(const std::string &newFile) {
     // check initialization
     if (m_pCamera == NULL) {
         CLogger::GetLogger()->LogPrintf(LL_ERROR, "camera is not initialized!");
@@ -192,42 +186,57 @@ bool CPicture::TakePicture(const std::string &fileName) {
         return false;
     }
 
-    // save image
-    if (!cv::imwrite(m_picPath + fileName, *m_pImage)) {
-        CLogger::GetLogger()->LogPrintf(LL_ERROR, "can not save picture \"%s\"!", fileName.c_str());
-        return false;
+    // check if picture has to be saved
+    if (&newFile != NULL) {
+        // save image
+        if (!cv::imwrite(m_picPath + newFile, *m_pImage)) {
+            CLogger::GetLogger()->LogPrintf(LL_ERROR, "can not save picture \"%s\"!", newFile.c_str());
+            return false;
+        }
     }
 
-    CLogger::GetLogger()->LogPrintf(LL_DEBUG, "picture \"%s\" was saved", fileName.c_str());
+    CLogger::GetLogger()->LogPrintf(LL_DEBUG, "picture has been taken from camera");
 
     return true;
 }
 
-void CPicture::PutText(const std::string &image, const std::string &text, const cv::Point &invCoord, const cv::Scalar &color) {
-    // check if picture is not null
-    if (&image == NULL) {
-        CLogger::GetLogger()->LogPrintf(LL_ERROR, "image is null!");
-        return;
+void CPicture::PutText(const std::string &text, const std::string &existingImage,
+    const cv::Point &invCoord, const cv::Scalar &color) {
+
+    cv::Mat outImage;
+    cv::Mat *pImage = m_pImage;
+
+    if (existingImage.size()) {
+        if (m_pImage == NULL) {
+            CLogger::GetLogger()->LogPrintf(LL_ERROR, "image to load is null!");
+            return;
+        }
+    } else {
+        // check if image exist with rw rights
+        if (!access(existingImage.c_str(), R_OK | W_OK)) {
+            CLogger::GetLogger()->LogPrintf(LL_ERROR, "image is not readable or writable!");
+            return;
+        }
+
+        // load image
+        outImage = cv::imread(m_picPath + existingImage, CV_LOAD_IMAGE_UNCHANGED);
+        pImage = &outImage;
     }
 
-    // check if image exist with rw rights
-    if (!access(image.c_str(), R_OK | W_OK)) {
-        CLogger::GetLogger()->LogPrintf(LL_ERROR, "image is not readable or writable!");
-        return;
-    }
-
-    // load image
-    const cv::Mat outImage = cv::imread(m_picPath + image, CV_LOAD_IMAGE_UNCHANGED);
-
-    // put text
-    cv::putText(outImage, text, cv::Point(outImage.size().width - invCoord.x, outImage.size().height - invCoord.y),
+    // put text on image
+    cv::putText(*pImage, text, cv::Point(pImage->size().height - invCoord.x, pImage->size().height - invCoord.y),
         cv::FONT_HERSHEY_COMPLEX_SMALL, 1.0, color);
 
-    // write image file
-    cv::imwrite(m_picPath + image, outImage);
+    // check if image needs to be saved
+    if (existingImage.size()) {
+        // write image file
+        cv::imwrite(m_picPath + existingImage, *pImage);
+    }
 
-    // clean
-    //outImage.release();
+    // clean image
+    outImage.release();
+    pImage = NULL;
+    delete(pImage);
 }
 
 void CPicture::Serialize(const cv::Mat image, std::stringstream &outStream) {
@@ -273,29 +282,40 @@ void CPicture::Deserialize(std::stringstream inStream, cv::Mat &outImage) {
     inStream.clear();
 }
 
-void CPicture::EncodePicture(const std::string &image, std::string &outEncode) {
-    // check if picture or output encoding are not null
-    if (&image == NULL || outEncode.length() == 0) {
-        CLogger::GetLogger()->LogPrintf(LL_ERROR, "image or output for encoding are null!");
-        return;
-    }
+std::string CPicture::EncodePicture(const std::string &existingImage) {
+    cv::Mat outImage;
+    cv::Mat *pImage = m_pImage;
+    std::string outEncode = "";
 
-    // check if image exist with r rights
-    if (!access(image.c_str(), R_OK)) {
-        CLogger::GetLogger()->LogPrintf(LL_ERROR, "image is not readable!");
-        return;
-    }
+    if (existingImage.size()) {
+        if (m_pImage == NULL) {
+            CLogger::GetLogger()->LogPrintf(LL_ERROR, "image to load is null!");
+            return outEncode;
+        }
+    } else {
+        // check if image exist with rw rights
+        if (!access(existingImage.c_str(), R_OK)) {
+            CLogger::GetLogger()->LogPrintf(LL_ERROR, "image is not readable!");
+            return outEncode;
+        }
 
-    // load image
-    const cv::Mat outImage = cv::imread(m_picPath + image, CV_LOAD_IMAGE_UNCHANGED);
+        // load image
+        outImage = cv::imread(m_picPath + existingImage, CV_LOAD_IMAGE_UNCHANGED);
+        pImage = &outImage;
+    }
 
     // serialize image
     std::stringstream ss;
-    Serialize(outImage, ss);
+    Serialize(*pImage, ss);
 
     // Base64 encode the image
     outEncode = Base64Encode(reinterpret_cast<const unsigned char*>(ss.str().c_str()), ss.str().length());
 
     // clean
     ss.clear();
+    outImage.release();
+    pImage = NULL;
+    delete(pImage);
+
+    return outEncode;
 }

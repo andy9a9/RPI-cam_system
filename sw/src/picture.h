@@ -35,15 +35,18 @@ public:
     ~CPicture();
 
     bool Init(const std::string &outpuPath, bool useCamera = true);
-    bool TakePicture(const std::string &fileName);
-    void PutText(const std::string &image, const std::string &text,
+    bool TakePicture(const std::string &newFile = NULL);
+    void PutText(const std::string &text, const std::string &existingImage = NULL,
         const cv::Point &invCoord = cv::Point(235, 20),
         const cv::Scalar &color = cv::Scalar(255, 255, 255));
 
-    void EncodePicture(const std::string &image, std::string &outEncode);
-    void DencodePicture(const std::string &image, std::string &outDencode);
+    std::string EncodePicture(const std::string &existingImage = NULL);
+    std::string DencodePicture(const std::string &existingImage = NULL);
 
 private:
+    void Encode(const cv::Mat &image, std::string &encoded);
+    void Decode(const std::string base64, cv::Mat &decoded);
+
     void Serialize(const cv::Mat image, std::stringstream &outStream);
     void Deserialize(std::stringstream inStream, cv::Mat &outImage);
 
