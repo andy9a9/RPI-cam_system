@@ -1,8 +1,8 @@
 #include "common.h"
 #include "logger.h"
 #include <sys/stat.h>
+#include <vector>
 #include "base64.h"
-
 #include <opencv2/imgproc.hpp>
 
 #include "picture.h"
@@ -102,7 +102,6 @@ bool CCamera::Capture(cv::Mat &outImage, int count) {
 CPicture::CPicture() {
     m_pCamera = NULL;
     m_pImage = NULL;
-    m_picPath.clear();
 }
 
 CPicture::~CPicture() {
@@ -113,8 +112,6 @@ CPicture::~CPicture() {
     m_pImage->release();
     delete m_pImage;
     m_pImage = NULL;
-
-    m_picPath.clear();
 }
 
 bool CPicture::Init(const std::string &outpuPath, bool useCamera) {
@@ -151,8 +148,6 @@ bool CPicture::Init(const std::string &outpuPath, bool useCamera) {
         CLogger::GetLogger()->LogPrintf(LL_DEBUG, "camera was successfully initialized");
     } else CLogger::GetLogger()->LogPrintf(LL_DEBUG, "camera was not used");
 
-    // set output path
-    m_picPath = outpuPath;
 
     return true;
 }
@@ -187,9 +182,9 @@ bool CPicture::TakePicture(const std::string &newFile) {
     }
 
     // check if picture has to be saved
-    if (&newFile != NULL) {
+    if (newFile.size()) {
         // save image
-        if (!cv::imwrite(m_picPath + newFile, *m_pImage)) {
+        if (!cv::imwrite(newFile, *m_pImage)) {
             CLogger::GetLogger()->LogPrintf(LL_ERROR, "can not save picture \"%s\"!", newFile.c_str());
             return false;
         }
@@ -206,7 +201,7 @@ void CPicture::PutText(const std::string &text, const std::string &existingImage
     cv::Mat outImage;
     cv::Mat *pImage = m_pImage;
 
-    if (existingImage.size()) {
+    if (!existingImage.size()) {
         if (m_pImage == NULL) {
             CLogger::GetLogger()->LogPrintf(LL_ERROR, "image to load is null!");
             return;
@@ -219,7 +214,7 @@ void CPicture::PutText(const std::string &text, const std::string &existingImage
         }
 
         // load image
-        outImage = cv::imread(m_picPath + existingImage, CV_LOAD_IMAGE_UNCHANGED);
+        outImage = cv::imread(existingImage, CV_LOAD_IMAGE_UNCHANGED);
         pImage = &outImage;
     }
 
@@ -229,8 +224,12 @@ void CPicture::PutText(const std::string &text, const std::string &existingImage
 
     // check if image needs to be saved
     if (existingImage.size()) {
-        // write image file
-        cv::imwrite(m_picPath + existingImage, *pImage);
+        try {
+            // write image file
+            cv::imwrite(existingImage, *pImage);
+        } catch (cv::Exception& ex) {
+            CLogger::GetLogger()->LogPrintf(LL_ERROR, "Can not create image %s!", existingImage.c_str());
+        }
     }
 
     // clean image
@@ -282,37 +281,38 @@ void CPicture::Deserialize(std::stringstream inStream, cv::Mat &outImage) {
     inStream.clear();
 }
 
-std::string CPicture::EncodePicture(const std::string &existingImage) {
+std::string CPicture::EncodePictureBase64(const std::string &existingImage) {
     cv::Mat outImage;
     cv::Mat *pImage = m_pImage;
     std::string outEncode = "";
 
-    if (existingImage.size()) {
+    if (!existingImage.size()) {
         if (m_pImage == NULL) {
             CLogger::GetLogger()->LogPrintf(LL_ERROR, "image to load is null!");
             return outEncode;
         }
     } else {
-        // check if image exist with rw rights
-        if (!access(existingImage.c_str(), R_OK)) {
+        // check if image exist with r rights
+        if (access(existingImage.c_str(), R_OK) < 0) {
             CLogger::GetLogger()->LogPrintf(LL_ERROR, "image is not readable!");
             return outEncode;
         }
 
         // load image
-        outImage = cv::imread(m_picPath + existingImage, CV_LOAD_IMAGE_UNCHANGED);
+        outImage = cv::imread(existingImage, CV_LOAD_IMAGE_UNCHANGED);
         pImage = &outImage;
     }
 
-    // serialize image
-    std::stringstream ss;
-    Serialize(*pImage, ss);
+    // encode image in memory
+    std::vector<uchar> encImage;
+    // TODO: add params
+    cv::imencode(".jpg", *pImage, encImage);
 
-    // Base64 encode the image
-    outEncode = Base64Encode(reinterpret_cast<const unsigned char*>(ss.str().c_str()), ss.str().length());
+    // encode image to base64
+    outEncode = Base64Encode(&encImage[0], encImage.size());
 
     // clean
-    ss.clear();
+    encImage.clear();
     outImage.release();
     pImage = NULL;
     delete(pImage);
