@@ -49,9 +49,9 @@ int LoadSettings(const char *fileName) {
         return -1;
 
     }
-    // check if image exist with r rights
-    if (!access(fileName, R_OK)) {
-        CLogger::GetLogger()->LogPrintf(LL_ERROR, "Configuration file is not readable!");
+    // check if settings file exist with r rights
+    if (access(fileName, R_OK) < 0) {
+        CLogger::GetLogger()->LogPrintf(LL_ERROR, "Configuration file \"%s\" is not readable!", fileName);
         return -1;
     }
 
@@ -93,7 +93,6 @@ int LoadSettings(const char *fileName) {
 }
 
 void UnloadSettings(void) {
-
     // check cfg file
     if (settings.pCfgFileName != NULL)
         free(settings.pCfgFileName);
