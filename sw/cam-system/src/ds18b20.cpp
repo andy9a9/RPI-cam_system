@@ -23,7 +23,7 @@ CDS18B20::~CDS18B20() {
 bool CDS18B20::Init() {
     DIR *dir;
     struct dirent *drp = NULL;
-    bool ret = false;
+    bool ret = true;
 
     // check directory for 1-wire devices exist
     if ((dir = opendir(m_devPath.c_str())) == NULL) {
@@ -116,6 +116,7 @@ float CDS18B20::GetTemp(unsigned char idx) {
 
             // remove t= prefix
             line = line.erase(0, 2);
+            break;
         }
     } catch (std::exception &ex) {
         CLogger::GetLogger()->LogPrintf(LL_ERROR, "GetTemp() %s", ex.what());
