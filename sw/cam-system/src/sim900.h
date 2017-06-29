@@ -7,9 +7,6 @@
 // pins definitions
 #define GPIO_SIM900_ON      17
 #define GPIO_SIM900_REST    18
-// TODO: check pins
-#define GPIO_SIM900_DTR     19
-#define GPIO_SIM900_RI      20
 
 // status bits definition
 #define MSK_STATUS_NONE         0
@@ -18,6 +15,8 @@
 
 // length for internal communication buffer
 #define COMM_BUFF_SIZE 200
+// max length for internal data to send
+#define COMM_INPUT_MAX_SIZE 64
 
 // common used strings
 #define STR_AT "AT"

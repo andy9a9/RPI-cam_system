@@ -75,9 +75,41 @@ void CGSM::_Write(const char *data) {
         CLogger::GetLogger()->LogPrintf(LL_ERROR, "data to write are missing!");
         return;
     }
+    const size_t size = strlen(data);
 
-    // write data to device
-    m_pSerial->Puts(data, strlen(data));
+    // split data greater than COMM_INPUT_BUFF_SIZE
+    if (size > COMM_INPUT_MAX_SIZE) {
+        size_t i;
+        __useconds_t timeout;
+
+        // get timeout @baudrate [us]
+        switch (settings.module.baudrate) {
+            case BR_9600:
+                timeout = 10000;
+                break;
+            case BR_19200:
+                timeout = 5000;
+                break;
+            case BR_38400:
+                timeout = 2000;
+                break;
+            case BR_115200:
+                timeout = 1000;
+                break;
+            default:
+                timeout = 100000;
+                break;
+        }
+
+        for (i=0; i + COMM_INPUT_MAX_SIZE < size; i += COMM_INPUT_MAX_SIZE) {
+            m_pSerial->Puts(data + i,COMM_INPUT_MAX_SIZE);
+            usleep(timeout);
+        }
+        m_pSerial->Puts(data + i, size - i);
+    } else {
+        // write data to device
+        m_pSerial->Puts(data, size);
+    }
 }
 
 void CGSM::_WriteLn(const char *data) {
