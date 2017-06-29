@@ -320,6 +320,8 @@ bool CSIM900::Init(const BaudRate baudrate, const char *device) {
         return m_initialized;
     }
 
+    // TODO: wake up from sleep
+
     // if no-reply we turn to turn on the module
     for (retry = 0; retry < 3; retry++) {
         if ((SendATCmd(STR_AT, 500, 100, STR_OK STR_CRLF, 5) == AT_RESP_NO_RESP) && (!turnedON)) {
@@ -393,7 +395,7 @@ std::string CSIM900::GetIMEI() {
     if ((status = WaitResp(5000, 50, STR_OK)) != RX_ST_FINISHED_STR_ERR) {
         // get data from device
         ret = GetCommBuff();
-        CLogger::GetLogger()->LogPrintf(LL_DEBUG, "%s(): IMEI:%s", __COMPACT_PRETTY_FUNCTION__, ret.c_str());
+        CLogger::GetLogger()->LogPrintf(LL_DEBUG, "%s(): IMEI:%s", __COMPACT_PRETTY_FUNCTION__, CompactString(ret).c_str());
     }
 
     return ret;
@@ -416,7 +418,7 @@ std::string CSIM900::GetCCI() {
     if ((status = WaitResp(5000, 50, STR_OK)) != RX_ST_FINISHED_STR_ERR) {
         // get data from device
         ret = GetCommBuff();
-        CLogger::GetLogger()->LogPrintf(LL_DEBUG, "%s(): CCI:%s", __COMPACT_PRETTY_FUNCTION__, ret.c_str());
+        CLogger::GetLogger()->LogPrintf(LL_DEBUG, "%s(): CCI:%s", __COMPACT_PRETTY_FUNCTION__, CompactString(ret).c_str());
     }
 
     return ret;
@@ -439,7 +441,7 @@ std::string CSIM900::GetIP() {
     if ((status = WaitResp(5000, 50, STR_OK)) != RX_ST_FINISHED_STR_ERR) {
         // get data from device
         ret = GetCommBuff();
-        CLogger::GetLogger()->LogPrintf(LL_DEBUG, "%s(): IP:%s", __COMPACT_PRETTY_FUNCTION__, ret.c_str());
+        CLogger::GetLogger()->LogPrintf(LL_DEBUG, "%s(): IP:%s", __COMPACT_PRETTY_FUNCTION__, CompactString(ret).c_str());
     }
 
     return ret;
@@ -453,7 +455,7 @@ CCtrlGSM::CCtrlGSM() {
 
 CCtrlGSM::~CCtrlGSM() {
     if (m_pSIM900 != NULL) {
-        DisconnectTCP();
+        DetachGPRS();
         delete m_pSIM900;
     }
     m_pSIM900 = NULL;
@@ -562,11 +564,10 @@ bool CCtrlGSM::AttachGPRS(const char *apn, const char *user, const char *pwd) {
             return m_connected;
         }
 
-        CLogger::GetLogger()->LogPrintf(LL_DEBUG, "%s", m_pSIM900->GetCommBuff().c_str());
+        CLogger::GetLogger()->LogPrintf(LL_DEBUG, "%s", CompactString(m_pSIM900->GetCommBuff()).c_str());
 
         m_connected = false;
         CLogger::GetLogger()->LogPrintf(LL_ERROR, "%s(): no IP address after connection!", __COMPACT_PRETTY_FUNCTION__);
-
     }
 
     return m_connected;
@@ -581,16 +582,21 @@ bool CCtrlGSM::DetachGPRS() {
     // check status
     if (m_pSIM900->GetGSMStatus() == GSM_ST_IDLE) return true;
 
+    // disconnect from TCP connection
+    DisconnectTCP();
+
     // disconnect from GPRS (0-detach)
     m_pSIM900->WriteLn("AT+CGATT=0");
     // check response
-    if (m_pSIM900->WaitResp(5000, 50, STR_OK) != RX_ST_FINISHED_STR_ERR) {
+    if (m_pSIM900->WaitResp(5000, 50, STR_OK) == RX_ST_FINISHED_STR_ERR) {
         CLogger::GetLogger()->LogPrintf(LL_ERROR, "%s(): can not close connection!", __COMPACT_PRETTY_FUNCTION__);
 
         // set error status
         m_pSIM900->SetGSMStatus(GSM_ST_ERROR);
         return false;
     }
+
+    CLogger::GetLogger()->LogPrintf(LL_DEBUG, "%s(): connection was successfully closed!", __COMPACT_PRETTY_FUNCTION__);
 
     // set status as disconnect
     m_pSIM900->SetGSMStatus(GSM_ST_READY);
@@ -610,6 +616,7 @@ bool CCtrlGSM::ConnectTCP(const char *server, unsigned int port) {
     m_pSIM900->Write(server);
     m_pSIM900->Write("\",");
     m_pSIM900->WriteLn(ToString(port).c_str());
+    sleep(1);
     // check response
     if (m_pSIM900->WaitResp(1000, 200, STR_OK) == (RX_ST_TIMEOUT_ERR || RX_ST_FINISHED_STR_ERR)) {
         CLogger::GetLogger()->LogPrintf(LL_ERROR, "%s(): can not start TCP connection!", __COMPACT_PRETTY_FUNCTION__);
@@ -618,9 +625,11 @@ bool CCtrlGSM::ConnectTCP(const char *server, unsigned int port) {
 
     // get last response
     const std::string str = m_pSIM900->GetCommBuff();
+    // TODO: only for test
+    CLogger::GetLogger()->LogPrintf(LL_DEBUG, "resp:%s", CompactString(str).c_str());
 
     // check connection status
-    if (!str.compare("CONNECT OK")) {
+    if (!str.compare(2, 10, "CONNECT OK")) {
         if (m_pSIM900->WaitResp(15000, 200, STR_OK) == (RX_ST_TIMEOUT_ERR || RX_ST_FINISHED_STR_ERR)) {
             CLogger::GetLogger()->LogPrintf(LL_ERROR, "%s(): can not connect to server!", __COMPACT_PRETTY_FUNCTION__);
             CLogger::GetLogger()->LogPrintf(LL_DEBUG, "%s(): server response: %s", __COMPACT_PRETTY_FUNCTION__, str.c_str());
@@ -678,7 +687,7 @@ bool CCtrlGSM::HttpGET(const char *server, unsigned int port, const char *url, c
             connected = true;
             break;
         }
-        CLogger::GetLogger()->LogPrintf(LL_DEBUG, "%s(): connecting....%1", __COMPACT_PRETTY_FUNCTION__, retry);
+        CLogger::GetLogger()->LogPrintf(LL_DEBUG, "%s(): connecting....%i", __COMPACT_PRETTY_FUNCTION__, retry);
     }
 
     // check connection status
@@ -734,7 +743,7 @@ bool CCtrlGSM::HttpPOST(const char *server, unsigned int port, const char *url, 
             connected = true;
             break;
         }
-        CLogger::GetLogger()->LogPrintf(LL_DEBUG, "%s(): connecting....%1", __COMPACT_PRETTY_FUNCTION__, retry);
+        CLogger::GetLogger()->LogPrintf(LL_DEBUG, "%s(): connecting....%i", __COMPACT_PRETTY_FUNCTION__, retry);
     }
 
     // check connection status
