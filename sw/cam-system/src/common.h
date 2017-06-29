@@ -40,9 +40,11 @@ template <typename T>
 static char ToASCII(const T& n) { static const char a[] = " .:-=0123456789X"; return a[(size_t(n * arraysize(a) -1))]; }
 
 // print compacted version of PRETTY_FUNCTION
-#define __COMPACT_PRETTY_FUNCTION__ computeMethodName(__FUNCTION__,__PRETTY_FUNCTION__).c_str()
+#define __COMPACT_PRETTY_FUNCTION__ ComputeMethodName(__FUNCTION__,__PRETTY_FUNCTION__).c_str()
+std::string ComputeMethodName(const std::string &function, const std::string &prettyFunction);
 
-std::string computeMethodName(const std::string &function, const std::string &prettyFunction);
+// remove unwanted zero-s
+inline std::string CompactString(const std::string &str) { return (str.substr(0, str.find('\0') + 1)); }
 
 // get time from start in [ms]
 unsigned GetTimeMSec();
