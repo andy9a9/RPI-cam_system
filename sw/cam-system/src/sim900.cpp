@@ -11,6 +11,7 @@ CGSM::CGSM() {
     memset(m_commBuff, 0x00, sizeof(m_commBuff));
     m_commStatus = CLS_FREE;
     m_GSMStatus = GSM_ST_IDLE;
+    m_transpMode = false;
 }
 
 CGSM::~CGSM() {
@@ -438,7 +439,7 @@ bool CCtrlGSM::Init(const BaudRate baudrate, const char *device) {
     return m_initialized;
 }
 
-bool CCtrlGSM::AttachGPRS(const char *apn, const char *user, const char *pwd) {
+bool CCtrlGSM::AttachGPRS(const char *apn, const char *user, const char *pwd, bool transpMode) {
     if (!m_initialized) {
         CLogger::GetLogger()->LogPrintf(LL_ERROR, "GSM module is not initialized!");
         return false;
@@ -451,6 +452,21 @@ bool CCtrlGSM::AttachGPRS(const char *apn, const char *user, const char *pwd) {
 
     // wait for response
     m_pSIM900->WaitResp(50, 50);
+
+    // set connection mode
+    if (transpMode) m_pSIM900->WriteLn("AT+CIPMODE=1");
+    else m_pSIM900->WriteLn("AT+CIPMODE=0");
+    // check response
+    if (m_pSIM900->WaitResp(500, 50, STR_OK) == (RX_ST_TIMEOUT_ERR || RX_ST_FINISHED_STR_ERR)) {
+        CLogger::GetLogger()->LogPrintf(LL_ERROR, "%s(): can not set non/transparent mode!", __COMPACT_PRETTY_FUNCTION__);
+
+        m_connected = false;
+        return m_connected;
+    }
+
+    // set selected mode
+    m_pSIM900->SetTranspMode(transpMode);
+
     // get local IP address
     m_pSIM900->WriteLn("AT+CIFSR");
 
@@ -618,11 +634,15 @@ bool CCtrlGSM::ConnectTCP(const char *server, unsigned int port) {
     CLogger::GetLogger()->LogPrintf(LL_DEBUG, "%s(): connected to server: %s", __COMPACT_PRETTY_FUNCTION__, server);
     sleep(3);
 
-    // open connection for data sending
-    m_pSIM900->WriteLn("AT+CIPSEND");
-    if (m_pSIM900->WaitResp(5000, 200, ">") == (RX_ST_TIMEOUT_ERR || RX_ST_FINISHED_STR_ERR)) {
-        CLogger::GetLogger()->LogPrintf(LL_ERROR, "%s(): can not open connection for data sending!", __COMPACT_PRETTY_FUNCTION__);
-        return false;
+    // CIPSEND is available only in non-transparent mode
+    if (!m_pSIM900->GetTranspMode()) {
+        // open connection for data sending
+        m_pSIM900->WriteLn("AT+CIPSEND");
+        if (m_pSIM900->WaitResp(5000, 200, ">") == (RX_ST_TIMEOUT_ERR || RX_ST_FINISHED_STR_ERR)) {
+            CLogger::GetLogger()->LogPrintf(LL_ERROR, "%s(): can not open connection for data sending!", __COMPACT_PRETTY_FUNCTION__);
+            m_connected = false;
+            return m_connected;
+        }
     }
 
     CLogger::GetLogger()->LogPrintf(LL_DEBUG, "%s(): opened connection for data sending", __COMPACT_PRETTY_FUNCTION__);
@@ -639,6 +659,8 @@ bool CCtrlGSM::DisconnectTCP() {
     }
 
     // disconnect from server
+    if (m_pSIM900->GetTranspMode()) m_pSIM900->WriteLn("ATH");
+
     m_pSIM900->WriteLn("AT+CIPCLOSE");
 
     // status handling
@@ -714,14 +736,38 @@ bool CCtrlGSM::HttpPOST(const char *server, unsigned int port, const char *url, 
         return false;
     }
 
-    for (int retry = 0; retry < 3; retry++) {
-        // try to connect to server
-        if (ConnectTCP(server, port)) {
-            CLogger::GetLogger()->LogPrintf(LL_INFO,"%s(): connected to server %s", __COMPACT_PRETTY_FUNCTION__, server);
-            connected = true;
-            break;
+    // check if is not already connected
+    m_pSIM900->WriteLn("AT+CIPSTATUS");
+    // check response
+    if (m_pSIM900->WaitResp(500, 50, "STATE: CONNECT OK") == (RX_ST_TIMEOUT_ERR || RX_ST_FINISHED_STR_ERR)) {
+        connected = true;
+    }
+
+    if (!connected) {
+        for (int retry = 0; retry < 3; retry++) {
+            // try to connect to server
+            if (ConnectTCP(server, port)) {
+                CLogger::GetLogger()->LogPrintf(LL_INFO,"%s(): connected to server %s", __COMPACT_PRETTY_FUNCTION__, server);
+                connected = true;
+                break;
+            }
+            CLogger::GetLogger()->LogPrintf(LL_DEBUG, "%s(): connecting....%i", __COMPACT_PRETTY_FUNCTION__, retry);
         }
-        CLogger::GetLogger()->LogPrintf(LL_DEBUG, "%s(): connecting....%i", __COMPACT_PRETTY_FUNCTION__, retry);
+    } else {
+        // CIPSEND is available only in non-transparent mode
+        if (!m_pSIM900->GetTranspMode()) {
+            m_pSIM900->WriteLn("AT+CIPSEND");
+            if (m_pSIM900->WaitResp(5000, 200, ">") == (RX_ST_TIMEOUT_ERR || RX_ST_FINISHED_STR_ERR)) {
+                CLogger::GetLogger()->LogPrintf(LL_ERROR, "%s(): can not open connection for data sending!", __COMPACT_PRETTY_FUNCTION__);
+                return false;
+            }
+        } else {
+            m_pSIM900->WriteLn("ATO");
+            if (m_pSIM900->WaitResp(5000, 200, "CONNECT") == (RX_ST_TIMEOUT_ERR || RX_ST_FINISHED_STR_ERR)) {
+                CLogger::GetLogger()->LogPrintf(LL_ERROR, "%s(): can not open connection for data sending!", __COMPACT_PRETTY_FUNCTION__);
+                return false;
+            }
+        }
     }
 
     // check connection status
@@ -729,6 +775,8 @@ bool CCtrlGSM::HttpPOST(const char *server, unsigned int port, const char *url, 
         CLogger::GetLogger()->LogPrintf(LL_INFO, "%s(): not connected to server %s", __COMPACT_PRETTY_FUNCTION__, server);
         return false;
     }
+
+    CLogger::GetLogger()->LogPrintf(LL_DEBUG, "%s(): start sending data", __COMPACT_PRETTY_FUNCTION__, server);
 
     // write data to server
     m_pSIM900->Write("POST ");
@@ -739,21 +787,37 @@ bool CCtrlGSM::HttpPOST(const char *server, unsigned int port, const char *url, 
     m_pSIM900->Write("User-Agent: ");
     m_pSIM900->WriteLn(SYS_NAME);
     m_pSIM900->WriteLn("Content-Type: application/x-www-form-urlencoded");
+    m_pSIM900->WriteLn("Expect:  ");
     m_pSIM900->Write("Content-Length: ");
-    m_pSIM900->Write(ToString(strlen(params)).c_str());
-    m_pSIM900->Write(STR_CRLF STR_CRLF);
+    m_pSIM900->WriteLn(ToString(strlen(params)).c_str());
+    m_pSIM900->Write(STR_CRLF);
     m_pSIM900->Write(params);
     m_pSIM900->Write(STR_CRLF STR_CRLF);
-    m_pSIM900->Write(STR_CTRLZ);
+
+    if (!m_pSIM900->GetTranspMode()) m_pSIM900->Write(STR_CTRLZ);
+    else {
+        // wait before switching to command mode
+        sleep(1);
+        m_pSIM900->Write("+++");
+        sleep(1);
+    }
+
     m_pSIM900->Write('\0');
 
-    sleep(1);
-
     // check response
-    if (m_pSIM900->WaitResp(10000, 10, "SEND OK") == (RX_ST_TIMEOUT_ERR || RX_ST_FINISHED_STR_ERR)) {
-        CLogger::GetLogger()->LogPrintf(LL_ERROR, "%s(): can not send data over POST method!", __COMPACT_PRETTY_FUNCTION__);
-        return false;
+    if (!m_pSIM900->GetTranspMode()) {
+        if (m_pSIM900->WaitResp(10000, 100, "SEND OK") == (RX_ST_TIMEOUT_ERR || RX_ST_FINISHED_STR_ERR)) {
+            CLogger::GetLogger()->LogPrintf(LL_ERROR, "%s(): can not send data over POST method!", __COMPACT_PRETTY_FUNCTION__);
+            return false;
+        }
+    } else {
+        if (m_pSIM900->WaitResp(10000, 100, "OK") == (RX_ST_TIMEOUT_ERR || RX_ST_FINISHED_STR_ERR)) {
+            CLogger::GetLogger()->LogPrintf(LL_ERROR, "%s(): can not send data over POST method!", __COMPACT_PRETTY_FUNCTION__);
+            return false;
+        }
     }
+
+    CLogger::GetLogger()->LogPrintf(LL_INFO, "%s(): data have been successfully sent", __COMPACT_PRETTY_FUNCTION__, server);
 
     usleep(50000);
 

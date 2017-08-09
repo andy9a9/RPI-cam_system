@@ -95,6 +95,9 @@ public:
 
     inline std::string GetCommBuff() { return std::string(m_commBuff); }
 
+    inline void SetTranspMode(bool transpMode) { m_transpMode = transpMode; }
+    inline bool GetTranspMode(void) { return m_transpMode; }
+
 protected:
     void Echo(bool on);
     void InitParams(unsigned char params);
@@ -119,6 +122,7 @@ private:
     char m_commBuff[COMM_BUFF_SIZE + 1];
     unsigned char m_commStatus;
     unsigned char m_GSMStatus;
+    bool m_transpMode;
 };
 
 class CSIM900: public CGSM {
@@ -145,7 +149,7 @@ public:
     ~CCtrlGSM();
 
     bool Init(const BaudRate baudrate = BR_9600, const char *device = "ttyAMA0");
-    bool AttachGPRS(const char *apn, const char *user, const char *pwd);
+    bool AttachGPRS(const char *apn, const char *user, const char *pwd, bool transpMode = false);
     bool DetachGPRS();
 
     bool HttpGET(const char *server, unsigned int port, const char *url, char *pOut = NULL, size_t outLen = 0);
