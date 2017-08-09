@@ -288,7 +288,8 @@ bool CSIM900::Init(const BaudRate baudrate, const char *device) {
         return m_initialized;
     }
 
-    // TODO: wake up from sleep
+    // prevent module to go to sleep mode
+    SendATCmd("AT+CSCLK=0", 500, 100, STR_OK STR_CRLF, 5);
 
     // if no-reply we turn to turn on the module
     for (retry = 0; retry < 3; retry++) {
