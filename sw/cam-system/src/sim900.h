@@ -15,8 +15,6 @@
 
 // length for internal communication buffer
 #define COMM_BUFF_SIZE 200
-// max length for internal data to send
-#define COMM_INPUT_MAX_SIZE 64
 
 // common used strings
 #define STR_AT "AT"
