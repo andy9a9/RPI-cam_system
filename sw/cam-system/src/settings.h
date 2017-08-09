@@ -33,10 +33,10 @@
 #define SYS_NAME "RPI_cam-system"
 
 // ini file section
-#define SECTION_INI_GENERAL "general"
-#define SECTION_INI_GPRS    "gprs"
-#define SECTION_INI_SERVER  "server"
-#define SECTION_INI_MODULE  "module"
+#define SECTION_INI_GENERAL "GENERAL"
+#define SECTION_INI_GPRS    "GPRS"
+#define SECTION_INI_SERVER  "SERVER"
+#define SECTION_INI_MODULE  "MODULE"
 
 struct stSetGPRS {
     char *apn;
