@@ -552,6 +552,17 @@ bool CCtrlGSM::DetachGPRS() {
     // disconnect from TCP connection
     DisconnectTCP();
 
+    // close previous connection
+    m_pSIM900->WriteLn("AT+CIPSHUT");
+    // check response
+    if (m_pSIM900->WaitResp(500, 50, "SHUT OK") == (RX_ST_TIMEOUT_ERR || RX_ST_FINISHED_STR_ERR)) {
+        CLogger::GetLogger()->LogPrintf(LL_ERROR, "%s(): can not close connection!", __COMPACT_PRETTY_FUNCTION__);
+
+        // set error status
+        m_pSIM900->SetGSMStatus(GSM_ST_ERROR);
+        return false;
+    }
+
     // disconnect from GPRS (0-detach)
     m_pSIM900->WriteLn("AT+CGATT=0");
     // check response
