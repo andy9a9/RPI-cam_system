@@ -93,21 +93,43 @@ int LoadSettings(const char *fileName) {
 }
 
 void UnloadSettings(void) {
-    // check cfg file
-    if (settings.pCfgFileName != NULL)
-        free(settings.pCfgFileName);
-
-    // check log file
-    if (settings.pLogFileName != NULL)
+    // clean log file
+    if (settings.pLogFileName != NULL) {
         free(settings.pLogFileName);
+        settings.pLogFileName = NULL;
+    }
 
-    // TODO: need test
-    if (&settings.GPRS != NULL) {
-        for (int i=0;i<3;i++) {
-            char *tmp = (char *)(settings.GPRS.apn) + i*(sizeof(char));
-            if (tmp != NULL) {
-                free(tmp);
-            }
-        }
+    // clean gprs
+    if (settings.GPRS.apn != NULL) {
+        free(settings.GPRS.apn);
+        settings.GPRS.apn = NULL;
+    }
+    if (settings.GPRS.password != NULL) {
+        free(settings.GPRS.password);
+        settings.GPRS.password = NULL;
+    }
+    if (settings.GPRS.username != NULL) {
+        free(settings.GPRS.username);
+        settings.GPRS.username = NULL;
+    }
+
+    // clean server
+    if (settings.server.url != NULL) {
+        free(settings.server.url);
+        settings.server.url = NULL;
+    }
+    if (settings.server.path != NULL) {
+        free(settings.server.path);
+        settings.server.path = NULL;
+    }
+
+    // clean module
+    if (settings.module.node != NULL) {
+        free(settings.module.node);
+        settings.module.node = NULL;
+    }
+    if (settings.module.pin != NULL) {
+        free(settings.module.pin);
+        settings.module.pin = NULL;
     }
 }
