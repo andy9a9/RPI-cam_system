@@ -1,5 +1,4 @@
 #include "common.h"
-#include <string.h>
 #include "threads.h"
 #include "gpio.h"
 
@@ -136,13 +135,42 @@ int GpIOInputISR(unsigned char pin, unsigned char edge, void (*pFunction)(void))
 
     // init pthread to call interrupt handler
     if (pFunction != NULL) {
+        // path of watching file
+        char fName[64] = {};
+        sprintf(fName, "%sgpio%d/value", GPIO_PATH, pin);
+
         // init threads
-        if (InitIsrThread()) {
+        if (InitIsrThread(fName, pFunction)) {
             fprintf(stderr, "Error: Can not initialize GPIO interrupt thread!\n");
-            return -4;
+            return -5;
         }
-        // TODO: init thread
+
+        // isr thread
+        pthread_t thread;
+
+        pthread_mutex_lock(pSctMutex);
+
+        // create isr thread
+        if (pthread_create(&thread, NULL, IsrThread, NULL)) {
+            fprintf(stderr, "Error: Can not create interrupt thread!\n");
+            return -6;
+        }
+
+        // wait for interrupt
+        // TODO: only for test
+        sleep(10);
+
+        pthread_mutex_unlock(pSctMutex);
     }
+
+    // get actual value
+    int value = GpIORead(pin);
+    if (value < 0) {
+        fprintf(stderr, "Error: Can not read value from GPIO pin %d!\n", pin);
+        return -4;
+    }
+
+    return value;
 }
 
 int GpIOInput(unsigned char pin) {
