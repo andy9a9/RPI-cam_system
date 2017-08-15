@@ -10,7 +10,6 @@ const static char* intEdgeds[] = {
 };
 
 static int GpIOInit(unsigned char pin, unsigned char in, unsigned char edge);
-static int GpIOUnInit(unsigned char pin);
 static int GpIOWrite(unsigned char pin, const char *value);
 static int GpIORead(unsigned char pin);
 
@@ -58,7 +57,20 @@ static int GpIOInit(unsigned char pin, unsigned char in, unsigned char edge) {
     return 0;
 }
 
-static int GpIOUnInit(unsigned char pin) {
+int GpIOUninit(unsigned char pin) {
+    char fName[64] = {};
+    FILE *fd;
+
+    sprintf(fName, "%s/gpio%d", GPIO_PATH, pin);
+
+    // unexport pin
+    if ((fd = fopen(GPIO_PATH"/unexport", "w")) == NULL) {
+        fprintf(stderr, "Error: Can not open GPIO unexport interface %s!\n", strerror(errno));
+        return -1;
+    }
+    fprintf(fd, "%d\n", pin);
+    fclose(fd);
+
     return 0;
 }
 
