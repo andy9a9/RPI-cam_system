@@ -9,7 +9,7 @@ pthread_cond_t sctCond;
 
 volatile
 static volatile int watchFd = -1;
-static void (*pIsrFunction)(void) = NULL;
+static void (*pIsrFunction)(int) = NULL;
 
 int InitThread(void) {
     int ret = 0;
@@ -114,7 +114,7 @@ void *IsrThread(void *args) {
     }
 
     // call callback function
-    pIsrFunction();
+    pIsrFunction(ret);
 
     // clean opened descriptors
     CleanIsrThread();

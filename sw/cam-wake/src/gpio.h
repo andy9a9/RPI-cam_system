@@ -16,7 +16,7 @@ enum en_interrupt_edge {
     GPIO_INT_EDGE_COUNT
 };
 
-int GpIOInputISR(unsigned char pin, unsigned char edge, void (*pFunction)(void));
+int GpIOInputIsr(unsigned char pin, unsigned char edge, void (*pFunction)(int));
 void GpIOOutput(unsigned char pin, unsigned char value);
 int GpIOInput(unsigned char pin);
 int GpIOUninit(unsigned char pin);

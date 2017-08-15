@@ -8,7 +8,7 @@
 
 extern pthread_mutex_t *pSctMutex;
 
-int InitIsrThread(char *pFile, void (*pCallbackFunc)(void));
+int InitIsr(char *pFile, void (*pCallbackFunc)(int));
 void CleanIsrThread(void);
 void *IsrThread(void *args);
 

@@ -126,7 +126,7 @@ void GpIOOutput(unsigned char pin, unsigned char value) {
     }
 }
 
-int GpIOInputISR(unsigned char pin, unsigned char edge, void (*pFunction)(void)) {
+int GpIOInputIsr(unsigned char pin, unsigned char edge, void (*pFunction)(int)) {
     // check pin ranges
     if (pin < GPIO_PIN_MIN || pin > GPIO_PIN_MAX) {
         fprintf(stderr, "Error: entered pin %d is out of range!\n", pin);
@@ -186,5 +186,5 @@ int GpIOInputISR(unsigned char pin, unsigned char edge, void (*pFunction)(void))
 }
 
 int GpIOInput(unsigned char pin) {
-    return GpIOInputISR(pin, GPIO_INT_EDGE_NONE, NULL);
+    return GpIOInputIsr(pin, GPIO_INT_EDGE_NONE, NULL);
 }
