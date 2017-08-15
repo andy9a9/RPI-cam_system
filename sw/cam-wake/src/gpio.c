@@ -145,36 +145,6 @@ int GpIOInputIsr(unsigned char pin, unsigned char edge, void (*pFunction)(int)) 
         return -3;
     }
 
-    // init pthread to call interrupt handler
-    if (pFunction != NULL) {
-        // path of watching file
-        char fName[64] = {};
-        sprintf(fName, "%sgpio%d/value", GPIO_PATH, pin);
-
-        // init threads
-        if (InitIsrThread(fName, pFunction)) {
-            fprintf(stderr, "Error: Can not initialize GPIO interrupt thread!\n");
-            return -5;
-        }
-
-        // isr thread
-        pthread_t thread;
-
-        pthread_mutex_lock(pSctMutex);
-
-        // create isr thread
-        if (pthread_create(&thread, NULL, IsrThread, NULL)) {
-            fprintf(stderr, "Error: Can not create interrupt thread!\n");
-            return -6;
-        }
-
-        // wait for interrupt
-        // TODO: only for test
-        sleep(10);
-
-        pthread_mutex_unlock(pSctMutex);
-    }
-
     // get actual value
     int value = GpIORead(pin);
     if (value < 0) {
@@ -182,6 +152,30 @@ int GpIOInputIsr(unsigned char pin, unsigned char edge, void (*pFunction)(int)) 
         return -4;
     }
 
+    // path of watching file
+    char fName[64] = {};
+    sprintf(fName, "%s/gpio%d/value", GPIO_PATH, pin);
+
+    // init threads
+    if (InitIsr(fName, pFunction)) {
+        fprintf(stderr, "Error: Can not initialize GPIO interrupt thread!\n");
+        return -5;
+    }
+
+    // init pthread to call interrupt handler
+    if (pFunction == NULL) {
+        // wait until interrupt
+        value = WaitIsr();
+    } else {
+        // isr thread
+        pthread_t thread;
+
+        // create isr thread
+        if (pthread_create(&thread, NULL, IsrThread, NULL)) {
+            fprintf(stderr, "Error: Can not create interrupt thread!\n");
+            return -6;
+        }
+    }
     return value;
 }
 

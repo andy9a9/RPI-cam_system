@@ -47,19 +47,11 @@ int InitThread(void) {
     return ret;
 }
 
-int InitIsrThread(char *pFile, void (*pCallbackFunc)(void)) {
-    char c;
-
+int InitIsr(char *pFile, void (*pCallbackFunc)(int)) {
     // check file
     if (pFile == NULL) {
         fprintf(stderr, "Error: can not watch empty filename!\n");
         return 1;
-    }
-
-    // check function
-    if (pCallbackFunc == NULL) {
-        fprintf(stderr, "Error: callback function can not be empty!\n");
-        return 2;
     }
 
     // open file for watching
@@ -69,6 +61,7 @@ int InitIsrThread(char *pFile, void (*pCallbackFunc)(void)) {
         return 3;
     }
 
+    char c;
     // clear pending interrupt
     if (read(watchFd, &c, 1) != 1) {
         fprintf(stderr, "Error: can not read file %s, err:%s!\n", pFile, strerror(errno));
@@ -76,27 +69,32 @@ int InitIsrThread(char *pFile, void (*pCallbackFunc)(void)) {
         return 4;
     }
 
-    if (InitThread() != 0) {
-        watchFd = -1;
-        pIsrFunction = NULL;
-        return 5;
-    }
+    // check if thread is used
+    if (pCallbackFunc != NULL) {
+        // init thread
+        if (InitThread() != 0) {
+            watchFd = -1;
+            pIsrFunction = NULL;
+            return 5;
+        }
 
-    // save callback function
-    pIsrFunction = pCallbackFunc;
+        // save callback function
+        pIsrFunction = pCallbackFunc;
+    }
 
     return 0;
 }
 
-void *IsrThread(void *args) {
+int WaitIsr(void) {
     int ret;
-    int value;
+    int value = -1;
+
     struct pollfd stPoll;
 
     // check if thread has been initialized
-    if ((watchFd < 0) || (pIsrFunction == NULL )) {
-        fprintf(stderr, "Error: thread has not been initialized!\n");
-        pthread_exit((int *) -1);
+    if (watchFd < 0) {
+        fprintf(stderr, "Error: isr has not been initialized!\n");
+        return value;
     }
 
     // fill polling structure
@@ -112,6 +110,24 @@ void *IsrThread(void *args) {
         // read value
         (void) read(watchFd, &value, 1);
     }
+    return value;
+}
+
+void *IsrThread(void *args) {
+    int ret;
+
+    // check if thread has been initialized
+    if ((watchFd < 0) || (pIsrFunction == NULL )) {
+        fprintf(stderr, "Error: thread has not been initialized!\n");
+        pthread_exit((int *) -1);
+    }
+
+    pthread_mutex_lock(pSctMutex);
+
+    // wait until interrupt
+    ret = WaitIsr();
+
+    pthread_mutex_unlock(pSctMutex);
 
     // call callback function
     pIsrFunction(ret);
