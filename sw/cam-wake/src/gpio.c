@@ -1,5 +1,5 @@
 #include "common.h"
-#include "threads.h"
+#include "interrupts.h"
 #include "gpio.h"
 
 const static char* intEdgeds[] = {

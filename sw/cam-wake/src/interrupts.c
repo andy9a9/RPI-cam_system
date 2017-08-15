@@ -2,7 +2,7 @@
 #include <time.h>
 #include <poll.h>
 
-#include "threads.h"
+#include "interrupts.h"
 
 pthread_mutex_t *pSctMutex = NULL;
 pthread_cond_t sctCond;

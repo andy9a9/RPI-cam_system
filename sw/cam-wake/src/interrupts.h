@@ -1,5 +1,5 @@
-#ifndef PTHREAD_H
-#define PTHREAD_H
+#ifndef INTERRUPTS_H
+#define INTERRUPTS_H
 
 #include <pthread.h>
 
@@ -12,4 +12,4 @@ int InitIsrThread(char *pFile, void (*pCallbackFunc)(void));
 void CleanIsrThread(void);
 void *IsrThread(void *args);
 
-#endif // PTHREAD_H
+#endif // INTERRUPTS_H

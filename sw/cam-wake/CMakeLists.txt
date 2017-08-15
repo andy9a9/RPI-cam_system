@@ -11,13 +11,13 @@ include_directories(
 set(cam-wake_SOURCES
   src/common.c
   src/gpio.c
-  src/threads.c
+  src/interrupts.c
   src/main.c
 )
 set(cam-wake_HEADERS
   src/common.h
   src/gpio.h
-  src/threads.h
+  src/interrupts.h
 )
 
 set(BINARY_NAME "cam-wake")
