@@ -1,6 +1,6 @@
 #include "common.h"
 #include <string.h>
-#include "pthread.h"
+#include "threads.h"
 #include "gpio.h"
 
 const static char* intEdgeds[] = {
@@ -16,7 +16,7 @@ static int GpIOWrite(unsigned char pin, const char *value);
 static int GpIORead(unsigned char pin);
 
 static int GpIOInit(unsigned char pin, unsigned char in, unsigned char edge) {
-    char fName[128] = {};
+    char fName[64] = {};
     FILE *fd;
 
     sprintf(fName, "%s/gpio%d", GPIO_PATH, pin);
@@ -46,7 +46,7 @@ static int GpIOInit(unsigned char pin, unsigned char in, unsigned char edge) {
     fclose(fd) ;
 
     // check if edge specified
-    if (in) {
+    if (edge) {
         sprintf(fName, "%sgpio%d/edge", GPIO_PATH, pin) ;
         if ((fd = fopen(fName, "w")) == NULL) {
             fprintf(stderr, "Error: Can not open GPIO edge interface %s!\n", strerror(errno));
@@ -64,7 +64,7 @@ static int GpIOUnInit(unsigned char pin) {
 }
 
 static int GpIOWrite(unsigned char pin, const char *value) {
-    char fName[128] = {};
+    char fName[64] = {};
     FILE *fd;
 
     sprintf(fName, "%sgpio%d/value", GPIO_PATH, pin);
@@ -80,7 +80,7 @@ static int GpIOWrite(unsigned char pin, const char *value) {
 }
 
 static int GpIORead(unsigned char pin) {
-    char fName[128] = {};
+    char fName[64] = {};
     FILE *fd;
     int value;
 
@@ -99,7 +99,7 @@ static int GpIORead(unsigned char pin) {
 void GpIOOutput(unsigned char pin, unsigned char value) {
     // check pin ranges
     if (pin < GPIO_PIN_MIN || pin > GPIO_PIN_MAX) {
-        fprintf(stderr, "Error: entered pin %d is out of range\n!", pin);
+        fprintf(stderr, "Error: entered pin %d is out of range!\n", pin);
         return;
     }
 
@@ -118,13 +118,13 @@ void GpIOOutput(unsigned char pin, unsigned char value) {
 int GpIOInputISR(unsigned char pin, unsigned char edge, void (*pFunction)(void)) {
     // check pin ranges
     if (pin < GPIO_PIN_MIN || pin > GPIO_PIN_MAX) {
-        fprintf(stderr, "Error: entered pin %d is out of range\n!", pin);
+        fprintf(stderr, "Error: entered pin %d is out of range!\n", pin);
         return -1;
     }
 
     // check edge ranges
     if ((edge < GPIO_INT_EDGE_NONE) || (edge >= GPIO_INT_EDGE_COUNT)) {
-        fprintf(stderr, "Error: entered edge %d is out of range\n!", edge);
+        fprintf(stderr, "Error: entered edge %d is out of range!\n", edge);
         return -2;
     }
 

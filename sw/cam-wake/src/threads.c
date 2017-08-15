@@ -14,7 +14,7 @@ int InitIsrThread(void) {
 
     // init mutex
     if (pthread_mutex_init(pSctMutex, NULL)) {
-        fprintf(stderr, "Error: can not create initialize mutex for scanning thread\n");
+        fprintf(stderr, "Error: can not create initialize mutex for scanning thread!\n");
         return -1;
     }
 
@@ -23,13 +23,13 @@ int InitIsrThread(void) {
 
     // init thread attributes
     if (pthread_condattr_init(&attr)) {
-        fprintf(stderr, "Error: can not initialize attributes for scanning thread\n");
+        fprintf(stderr, "Error: can not initialize attributes for scanning thread!\n");
         ret = -2;
     } else if (pthread_condattr_setclock(&attr, CLOCK_MONOTONIC)) {
-        fprintf(stderr, "Error: can not set clock attributes for scanning thread\n");
+        fprintf(stderr, "Error: can not set clock attributes for scanning thread!\n");
         ret = -3;
     } else if (pthread_cond_init(&sctCond, &attr)) {
-        fprintf(stderr, "Error: can not set conditions for scanning thread\n");
+        fprintf(stderr, "Error: can not set conditions for scanning thread!\n");
         ret = -4;
     }
 
