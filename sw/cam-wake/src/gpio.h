@@ -6,7 +6,7 @@
 #define GPIO_PIN_MAX 24
 
 #define AS_ROOT "sudo echo "
-#define GPIO_PATH "/sys/class/gpio/"
+#define GPIO_PATH "/sys/class/gpio"
 
 enum en_interrupt_edge {
     GPIO_INT_EDGE_NONE = 0,

@@ -119,7 +119,7 @@ void *IsrThread(void *args) {
     // clean opened descriptors
     CleanIsrThread();
 
-    return NULL ;
+    return NULL;
 }
 
 void CleanIsrThread(void) {

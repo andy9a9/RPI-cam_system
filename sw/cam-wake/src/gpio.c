@@ -40,12 +40,12 @@ static int GpIOInit(unsigned char pin, unsigned char in, unsigned char edge) {
         return -2;
     }
 
-    fprintf(fd, "%s\n", in ? "in" : "out") ;
-    fclose(fd) ;
+    fprintf(fd, "%s\n", in ? "in" : "out");
+    fclose(fd);
 
     // check if edge specified
     if (edge) {
-        sprintf(fName, "%sgpio%d/edge", GPIO_PATH, pin) ;
+        sprintf(fName, "%s/gpio%d/edge", GPIO_PATH, pin);
         if ((fd = fopen(fName, "w")) == NULL) {
             fprintf(stderr, "Error: Can not open GPIO edge interface %s!\n", strerror(errno));
             return -3;
@@ -78,7 +78,7 @@ static int GpIOWrite(unsigned char pin, const char *value) {
     char fName[64] = {};
     FILE *fd;
 
-    sprintf(fName, "%sgpio%d/value", GPIO_PATH, pin);
+    sprintf(fName, "%s/gpio%d/value", GPIO_PATH, pin);
     if ((fd = fopen(fName, "w")) == NULL) {
         fprintf(stderr, "Error: Can not open GPIO value interface %s!\n", strerror(errno));
         return -1;
@@ -95,7 +95,7 @@ static int GpIORead(unsigned char pin) {
     FILE *fd;
     int value;
 
-    sprintf(fName, "%sgpio%d/value", GPIO_PATH, pin);
+    sprintf(fName, "%s/gpio%d/value", GPIO_PATH, pin);
     if ((fd = fopen(fName, "r")) == NULL) {
         fprintf(stderr, "Error: Can not open GPIO value interface %s!\n", strerror(errno));
         return -1;
