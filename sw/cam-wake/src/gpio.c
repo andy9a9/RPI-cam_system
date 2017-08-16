@@ -10,24 +10,22 @@ const static char* intEdgeds[] = {
 };
 
 static int GpIOInit(unsigned char pin, unsigned char in, unsigned char edge);
-static int GpIOWrite(unsigned char pin, const char *value);
 static int GpIORead(unsigned char pin);
+static int GpIOWrite(const char *pGpioFile, const char *value, unsigned int wait);
 
 static int GpIOInit(unsigned char pin, unsigned char in, unsigned char edge) {
     char fName[64] = {};
-    FILE *fd;
 
     sprintf(fName, "%s/gpio%d", GPIO_PATH, pin);
 
     // check if pin is not already exported
     if (access(fName, F_OK) < 0) {
+        sprintf(fName, "%d", pin);
         // export pin
-        if ((fd = fopen(GPIO_PATH"/export", "w")) == NULL) {
+        if (GpIOWrite(GPIO_PATH"/export", fName, 0) < 0) {
             fprintf(stderr, "Error: can not open GPIO export interface!\n");
             return -1;
         }
-        fprintf(fd, "%d\n", pin);
-        fclose(fd);
     } else {
         // already exported
         return 1;
@@ -35,57 +33,31 @@ static int GpIOInit(unsigned char pin, unsigned char in, unsigned char edge) {
 
     // set direction
     sprintf(fName, "%s/gpio%d/direction", GPIO_PATH, pin);
-    if ((fd = fopen(fName, "w")) == NULL) {
+    if (GpIOWrite(fName, in ? "in" : "out", 1000) < 0) {
         fprintf(stderr, "Error: can not open GPIO direction interface!\n");
         return -2;
     }
 
-    fprintf(fd, "%s\n", in ? "in" : "out");
-    fclose(fd);
-
     // check if edge specified
     if (edge) {
         sprintf(fName, "%s/gpio%d/edge", GPIO_PATH, pin);
-        if ((fd = fopen(fName, "w")) == NULL) {
+        if (GpIOWrite(fName, intEdgeds[edge], 1000) < 0) {
             fprintf(stderr, "Error: can not open GPIO edge interface!\n");
             return -3;
         }
-
-        fprintf(fd, "%s\n", intEdgeds[edge]);
-        fclose(fd);
     }
     return 0;
 }
 
 int GpIOUninit(unsigned char pin) {
-    char fName[64] = {};
-    FILE *fd;
-
-    sprintf(fName, "%s/gpio%d", GPIO_PATH, pin);
+    char tmpBuff[4] = {};
 
     // unexport pin
-    if ((fd = fopen(GPIO_PATH"/unexport", "w")) == NULL) {
+    sprintf(tmpBuff, "%d", pin);
+    if (GpIOWrite(GPIO_PATH"/unexport", tmpBuff, 0) < 0) {
         fprintf(stderr, "Error: can not open GPIO unexport interface!\n");
         return -1;
     }
-    fprintf(fd, "%d\n", pin);
-    fclose(fd);
-
-    return 0;
-}
-
-static int GpIOWrite(unsigned char pin, const char *value) {
-    char fName[64] = {};
-    FILE *fd;
-
-    sprintf(fName, "%s/gpio%d/value", GPIO_PATH, pin);
-    if ((fd = fopen(fName, "w")) == NULL) {
-        fprintf(stderr, "Error: can not open GPIO value interface: %s!\n", strerror(errno));
-        return -1;
-    }
-
-    fprintf(fd, "%s\n", value);
-    fclose(fd);
 
     return 0;
 }
@@ -97,7 +69,7 @@ static int GpIORead(unsigned char pin) {
 
     sprintf(fName, "%s/gpio%d/value", GPIO_PATH, pin);
     if ((fd = fopen(fName, "r")) == NULL) {
-        fprintf(stderr, "Error: Can not open GPIO value interface %s!\n", strerror(errno));
+        fprintf(stderr, "Error: can not open GPIO value interface: %s!\n", strerror(errno));
         return -1;
     }
 
@@ -107,7 +79,51 @@ static int GpIORead(unsigned char pin) {
     return value;
 }
 
+static int GpIOWrite(const char *pGpioFile, const char *value, unsigned int wait) {
+    int i;
+    int fd;
+    int ret = 0;
+
+    // check file and data
+    if (pGpioFile == NULL || value == NULL) {
+        fprintf(stderr, "Error: file or value are NULL!\n");
+        return -1;
+    }
+
+    // make some delay before file creation
+    for (i = 0;; i += 20) {
+        // open file for writing
+        if ((fd = open(pGpioFile, O_WRONLY, 0)) >= 0) break;
+        // check wait condition
+        if (i >= wait) break;
+        // make some wait
+        usleep(20 * 1000);
+    }
+
+    // check if file has been successfully open
+    if (fd < 0) {
+        fprintf(stderr, "Error: can not open file %s, err:%s!", pGpioFile, strerror(errno));
+        return -2;
+    }
+
+    // get data length
+    int len = strlen(value);
+
+    // write data to file
+    if ((ret = write(fd, value, len)) < 0) {
+        fprintf(stderr, "Error: can not write value to file %s, err:%s!", pGpioFile, strerror(errno));
+        ret = -3;
+    }
+
+    // close file
+    close(fd);
+
+    return (ret == len);
+}
+
 void GpIOOutput(unsigned char pin, unsigned char value) {
+    char fName[64] = {};
+
     // check pin ranges
     if (pin < GPIO_PIN_MIN || pin > GPIO_PIN_MAX) {
         fprintf(stderr, "Error: entered pin %d is out of range!\n", pin);
@@ -121,8 +137,10 @@ void GpIOOutput(unsigned char pin, unsigned char value) {
     }
 
     // set GPIO value
-    if (GpIOWrite(pin, value ? "1" : "0")) {
+    sprintf(fName, "%s/gpio%d/value", GPIO_PATH, pin);
+    if (GpIOWrite(fName, value ? "1" : "0", 0) < 0) {
         fprintf(stderr, "Error: can not set value %d on GPIO pin %d!\n", value, pin);
+        return;
     }
 }
 
