@@ -9,4 +9,8 @@
 #include <string.h>
 #include <errno.h>
 
-#endif // COMMON_H
+#define CAM_SYSTEM_PATH "/opt/pi/"
+#define CAM_SYSTEM_APP CAM_SYSTEM_PATH "bin/cam-system"
+#define CAM_SYSTEM_CFG " -c " CAM_SYSTEM_PATH "etc/cam-system/cam-system.cfg"
+
+#endif // COMMON_H_
