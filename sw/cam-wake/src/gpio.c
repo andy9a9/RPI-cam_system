@@ -23,7 +23,7 @@ static int GpIOInit(unsigned char pin, unsigned char in, unsigned char edge) {
     if (access(fName, F_OK) < 0) {
         // export pin
         if ((fd = fopen(GPIO_PATH"/export", "w")) == NULL) {
-            fprintf(stderr, "Error: Can not open GPIO export interface %s!\n", strerror(errno));
+            fprintf(stderr, "Error: can not open GPIO export interface!\n");
             return -1;
         }
         fprintf(fd, "%d\n", pin);
@@ -36,7 +36,7 @@ static int GpIOInit(unsigned char pin, unsigned char in, unsigned char edge) {
     // set direction
     sprintf(fName, "%s/gpio%d/direction", GPIO_PATH, pin);
     if ((fd = fopen(fName, "w")) == NULL) {
-        fprintf(stderr, "Error: Can not open GPIO direction interface %s!\n", strerror(errno));
+        fprintf(stderr, "Error: can not open GPIO direction interface!\n");
         return -2;
     }
 
@@ -47,7 +47,7 @@ static int GpIOInit(unsigned char pin, unsigned char in, unsigned char edge) {
     if (edge) {
         sprintf(fName, "%s/gpio%d/edge", GPIO_PATH, pin);
         if ((fd = fopen(fName, "w")) == NULL) {
-            fprintf(stderr, "Error: Can not open GPIO edge interface %s!\n", strerror(errno));
+            fprintf(stderr, "Error: can not open GPIO edge interface!\n");
             return -3;
         }
 
@@ -65,7 +65,7 @@ int GpIOUninit(unsigned char pin) {
 
     // unexport pin
     if ((fd = fopen(GPIO_PATH"/unexport", "w")) == NULL) {
-        fprintf(stderr, "Error: Can not open GPIO unexport interface %s!\n", strerror(errno));
+        fprintf(stderr, "Error: can not open GPIO unexport interface!\n");
         return -1;
     }
     fprintf(fd, "%d\n", pin);
@@ -80,7 +80,7 @@ static int GpIOWrite(unsigned char pin, const char *value) {
 
     sprintf(fName, "%s/gpio%d/value", GPIO_PATH, pin);
     if ((fd = fopen(fName, "w")) == NULL) {
-        fprintf(stderr, "Error: Can not open GPIO value interface %s!\n", strerror(errno));
+        fprintf(stderr, "Error: can not open GPIO value interface: %s!\n", strerror(errno));
         return -1;
     }
 
@@ -116,13 +116,13 @@ void GpIOOutput(unsigned char pin, unsigned char value) {
 
     // init GPIO
     if (GpIOInit(pin, 0, GPIO_INT_EDGE_NONE) < 0) {
-        fprintf(stderr, "Error: Can not initialize GPIO pin %d!\n", pin);
+        fprintf(stderr, "Error: can not initialize GPIO pin %d!\n", pin);
         return;
     }
 
     // set GPIO value
     if (GpIOWrite(pin, value ? "1" : "0")) {
-        fprintf(stderr, "Error: Can not set value %d on GPIO pin %d!\n", value, pin);
+        fprintf(stderr, "Error: can not set value %d on GPIO pin %d!\n", value, pin);
     }
 }
 
@@ -141,14 +141,14 @@ int GpIOInputIsr(unsigned char pin, unsigned char edge, void (*pFunction)(int)) 
 
     // init GPIO
     if (GpIOInit(pin, 1, edge) < 0) {
-        fprintf(stderr, "Error: Can not initialize GPIO pin %d!\n", pin);
+        fprintf(stderr, "Error: can not initialize GPIO pin %d!\n", pin);
         return -3;
     }
 
     // get actual value
     int value = GpIORead(pin);
     if (value < 0) {
-        fprintf(stderr, "Error: Can not read value from GPIO pin %d!\n", pin);
+        fprintf(stderr, "Error: can not read value from GPIO pin %d!\n", pin);
         return -4;
     }
 
@@ -158,7 +158,7 @@ int GpIOInputIsr(unsigned char pin, unsigned char edge, void (*pFunction)(int)) 
 
     // init threads
     if (InitIsr(fName, pFunction)) {
-        fprintf(stderr, "Error: Can not initialize GPIO interrupt thread!\n");
+        fprintf(stderr, "Error: can not initialize GPIO interrupt thread!\n");
         return -5;
     }
 
@@ -172,7 +172,7 @@ int GpIOInputIsr(unsigned char pin, unsigned char edge, void (*pFunction)(int)) 
 
         // create isr thread
         if (pthread_create(&thread, NULL, IsrThread, NULL)) {
-            fprintf(stderr, "Error: Can not create interrupt thread!\n");
+            fprintf(stderr, "Error: can not create interrupt thread!\n");
             return -6;
         }
     }

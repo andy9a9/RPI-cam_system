@@ -93,7 +93,7 @@ int WaitIsr(void) {
 
     // check if thread has been initialized
     if (watchFd < 0) {
-        fprintf(stderr, "Error: isr has not been initialized!\n");
+        fprintf(stderr, "Error: ISR has not been initialized!\n");
         return value;
     }
 
