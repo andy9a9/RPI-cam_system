@@ -183,7 +183,7 @@ void CPicture::PutText(const std::string &text, const std::string &existingImage
         }
     } else {
         // check if image exist with rw rights
-        if (!access(existingImage.c_str(), R_OK | W_OK)) {
+        if (access(existingImage.c_str(), R_OK | W_OK) < 0) {
             CLogger::GetLogger()->LogPrintf(LL_ERROR, "image is not readable or writable!");
             return;
         }
