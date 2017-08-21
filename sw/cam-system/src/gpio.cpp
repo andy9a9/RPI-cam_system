@@ -41,7 +41,7 @@ bool CGpIOBase::WriteFile(const std::string &file, const char *data, int wait) {
 
     // check if file has been successfully open
     if (fd < 0) {
-        CLogger::GetLogger()->LogPrintf(LL_ERROR, "Unable to open file + for writing!", file.c_str());
+        CLogger::GetLogger()->LogPrintf(LL_ERROR, "Unable to open file %s for writing!", file.c_str());
         return false;
     }
 
