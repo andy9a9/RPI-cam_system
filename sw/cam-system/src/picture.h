@@ -34,7 +34,7 @@ public:
     CPicture();
     ~CPicture();
 
-    bool Init(const std::string &outpuPath, bool useCamera = true);
+    bool InitCam(void);
     bool TakePicture(const std::string &newFile = "");
     void PutText(const std::string &text, const std::string &existingImage = "",
         const cv::Point &invCoord = cv::Point(120, 20),

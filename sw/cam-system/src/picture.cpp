@@ -114,40 +114,15 @@ CPicture::~CPicture() {
     m_pImage = NULL;
 }
 
-bool CPicture::Init(const std::string &outpuPath, bool useCamera) {
-    // check if output path for pictures is not null
-    if (!outpuPath.size()) {
-        CLogger::GetLogger()->LogPrintf(LL_ERROR, "output path for pictures is null!");
+bool CPicture::InitCam(void) {
+    // init camera
+    m_pCamera = new CCamera();
+    if (!m_pCamera->Init()) {
+        CLogger::GetLogger()->LogPrintf(LL_ERROR, "camera was not initialized!");
         return false;
     }
 
-    // check if directory exist
-    if (access(outpuPath.c_str(), F_OK) < 0) {
-        // create new directory
-        if (mkdir(outpuPath.c_str(), S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH) < 0) {
-            CLogger::GetLogger()->LogPrintf(LL_ERROR, "can not create path %s!", outpuPath.c_str());
-            return false;
-        }
-    }
-
-    // check if directory is writable
-    if (access(outpuPath.c_str(), W_OK) < 0) {
-        CLogger::GetLogger()->LogPrintf(LL_ERROR, "path %s is not writable!", outpuPath.c_str());
-        return false;
-    }
-
-    // check if camera should be used
-    if (useCamera) {
-        // init camera
-        m_pCamera = new CCamera();
-        if (!m_pCamera->Init()) {
-            CLogger::GetLogger()->LogPrintf(LL_ERROR, "camera was not initialized!");
-            return false;
-        }
-
-        CLogger::GetLogger()->LogPrintf(LL_DEBUG, "camera was successfully initialized");
-    } else CLogger::GetLogger()->LogPrintf(LL_DEBUG, "camera was not used");
-
+    CLogger::GetLogger()->LogPrintf(LL_DEBUG, "camera was successfully initialized");
 
     return true;
 }
