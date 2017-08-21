@@ -62,7 +62,7 @@ bool CCamera::Init() {
     return true;
 }
 
-bool CCamera::Capture(cv::Mat &outImage, int count) {
+bool CCamera::Capture(cv::Mat &outImage, int count, bool flip) {
     // check output image
     if (&outImage == NULL) {
         CLogger::GetLogger()->LogPrintf(LL_ERROR, "output image is null!");
@@ -95,6 +95,8 @@ bool CCamera::Capture(cv::Mat &outImage, int count) {
     std::swap(channels[0], channels[2]);
     // merge swapped channels back into image
     cv::merge(channels, 3, outImage);
+    // flip 180 degree
+    if (flip) cv::flip(outImage, outImage, -1);
 
     return true;
 }
@@ -127,7 +129,7 @@ bool CPicture::InitCam(void) {
     return true;
 }
 
-bool CPicture::TakePicture(const std::string &newFile) {
+bool CPicture::TakePicture(const std::string &newImage, bool flip) {
     // check initialization
     if (m_pCamera == NULL) {
         CLogger::GetLogger()->LogPrintf(LL_ERROR, "camera is not initialized!");
@@ -151,16 +153,16 @@ bool CPicture::TakePicture(const std::string &newFile) {
     m_pImage = new cv::Mat;
 
     // take picture from camera
-    if (!m_pCamera->Capture(*m_pImage, IMAGE_FRAME_COUNT)) {
+    if (!m_pCamera->Capture(*m_pImage, IMAGE_FRAME_COUNT, flip)) {
         CLogger::GetLogger()->LogPrintf(LL_ERROR, "can not get picture from camera!");
         return false;
     }
 
     // check if picture has to be saved
-    if (newFile.size()) {
+    if (newImage.size()) {
         // save image
-        if (!cv::imwrite(newFile, *m_pImage)) {
-            CLogger::GetLogger()->LogPrintf(LL_ERROR, "can not save picture \"%s\"!", newFile.c_str());
+        if (!cv::imwrite(newImage, *m_pImage)) {
+            CLogger::GetLogger()->LogPrintf(LL_ERROR, "can not save picture \"%s\"!", newImage.c_str());
             return false;
         }
     }

@@ -19,7 +19,7 @@ public:
     inline bool isConnected() { return m_connected; }
     void Disconnect();
 
-    bool Capture(cv::Mat &outImage, int count = 1);
+    bool Capture(cv::Mat &outImage, int count = 1, bool flip = false);
 
 private:
     raspicam::RaspiCam_Cv *m_pRaspiCam;
@@ -35,7 +35,7 @@ public:
     ~CPicture();
 
     bool InitCam(void);
-    bool TakePicture(const std::string &newFile = "");
+    bool TakePicture(const std::string &newFile = "", bool flip = false);
     void PutText(const std::string &text, const std::string &existingImage = "",
         const cv::Point &invCoord = cv::Point(120, 20),
         const cv::Scalar &color = cv::Scalar(255, 255, 255));
