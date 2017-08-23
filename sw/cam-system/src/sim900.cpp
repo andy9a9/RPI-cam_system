@@ -623,7 +623,7 @@ bool CCtrlGSM::ConnectTCP(const char *server, unsigned int port) {
     m_pSIM900->WriteLn(ToString(port).c_str());
     sleep(1);
     // check response
-    if (m_pSIM900->WaitResp(1000, 200, STR_OK) == (RX_ST_TIMEOUT_ERR || RX_ST_FINISHED_STR_ERR)) {
+    if (m_pSIM900->WaitResp(2000, 200, STR_OK) == (RX_ST_TIMEOUT_ERR || RX_ST_FINISHED_STR_ERR)) {
         CLogger::GetLogger()->LogPrintf(LL_ERROR, "%s(): can not start TCP connection!", __COMPACT_PRETTY_FUNCTION__);
         return false;
     }
@@ -808,7 +808,7 @@ bool CCtrlGSM::HttpPOST(const char *server, unsigned int port, const char *url, 
     if (!m_pSIM900->GetTranspMode()) m_pSIM900->Write(STR_CTRLZ);
     else {
         // wait before switching to command mode
-        sleep(1);
+        sleep(3);
         m_pSIM900->Write("+++");
         sleep(1);
     }
