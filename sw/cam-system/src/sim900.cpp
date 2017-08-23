@@ -468,6 +468,16 @@ bool CCtrlGSM::AttachGPRS(const char *apn, const char *user, const char *pwd, bo
     // set selected mode
     m_pSIM900->SetTranspMode(transpMode);
 
+    // connect to GPRS (1-attach)
+    m_pSIM900->WriteLn("AT+CGATT=1");
+    // check response
+    if (m_pSIM900->WaitResp(5000, 50, STR_OK) == RX_ST_FINISHED_STR_ERR) {
+        CLogger::GetLogger()->LogPrintf(LL_ERROR, "%s(): can not attach to GPRS!", __COMPACT_PRETTY_FUNCTION__);
+
+        m_connected = false;
+        return m_connected;
+    }
+
     // get local IP address
     m_pSIM900->WriteLn("AT+CIFSR");
 
