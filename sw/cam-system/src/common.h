@@ -46,6 +46,9 @@ std::string ComputeMethodName(const std::string &function, const std::string &pr
 // remove unwanted zero-s
 inline std::string CompactString(const std::string &str) { return (str.substr(0, str.find('\0') + 1)); }
 
+// replace string in string
+std::string ReplaceString(std::string base, const std::string from, const std::string to);
+
 // get time from start in [ms]
 unsigned GetTimeMSec();
 // get time from start in [s]

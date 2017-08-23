@@ -39,3 +39,12 @@ std::string ComputeMethodName(const std::string &function, const std::string &pr
     size_t end = prettyFunction.find("(",locFunName + function.length());
     return prettyFunction.substr(begin,end - begin);
 }
+
+std::string ReplaceString(std::string base, const std::string from, const std::string to) {
+    std::string tmpStr = base;
+
+    for (size_t start_pos = tmpStr.find(from); start_pos != std::string::npos; start_pos = tmpStr.find(from,start_pos))
+        tmpStr.replace(start_pos, from.length(), to);
+
+    return tmpStr;
+}
