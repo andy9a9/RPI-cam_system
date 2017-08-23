@@ -85,7 +85,7 @@ bool CCamera::Capture(cv::Mat &outImage, int count, bool flip) {
         m_pRaspiCam->retrieve(outImage);
 
         if ((i % 10) == 0)
-            CLogger::GetLogger()->LogPrintf(LL_DEBUG, "%i frames were taken", i);
+            CLogger::GetLogger()->LogPrintf(LL_DEBUG, "%i frames have taken", i);
     }
 
     cv::Mat channels[3];
